@@ -66,7 +66,7 @@ const Label = (props) => {
 // 	);
 // };
 
-const Zelle = {
+const PaymMethod = {
 	name: "zelle",
 	label: <Label />,
 	content: <Content />,
@@ -77,7 +77,7 @@ const Zelle = {
 		features: settings.supports,
 	},
 };
-// const Zelle = {
+// const PaymMethod = {
 // 	name: "zelle",
 // 	label: Label,
 // 	content: Content,
@@ -89,4 +89,4 @@ const Zelle = {
 // 	},
 // };
 
-registerPaymentMethod(Zelle);
+registerPaymentMethod(PaymMethod);

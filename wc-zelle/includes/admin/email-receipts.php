@@ -41,6 +41,7 @@ echo get_bloginfo( 'name' );
             <h2 class="mb-3">Zelle Institution Information</h2>
             <p class="text-danger"><strong>*** This is the information of the institution where you receive/send Zelle payments ***</strong></label>
             <p class="text-danger"><strong>Only Transactions that originate from this institution will be used to process your orders</strong></label>
+
             <form class="my-4" id="store-connect-form" name="store-connect-form" action="https://emailreceipts.io/store/connect?ref=<?php 
 echo urlencode( WCZELLE_PLUGIN_SLUG );
 ?>"

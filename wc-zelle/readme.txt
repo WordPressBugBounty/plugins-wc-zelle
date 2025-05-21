@@ -1,27 +1,55 @@
 === Checkout with Zelle on Woocommerce ===
-Contributors: theafricanboss, freemius
+Contributors: theafricanboss
 Donate Link: https://gurastores.com/get-cash
 Tags: zelle,bank transfer,woocommerce,payments,money transfer
-Stable tag: 4.0
+Stable tag: 4.1
 Requires PHP: 5.0
 Requires at least: 5.0
-Tested up to: 6.5.4
+Tested up to: 6.8.1
 WC requires at least: 6.0.0
-WC tested up to: 9.0.1
+WC tested up to: 9.8.5
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-The top finance app in the App Store now available on WordPress. Receive Zelle payments on your website with WooCommerce + Zelle
+Receive Zelle payments on your website with WooCommerce + Zelle
 
 == Description ==
 
-Checkout with Zelle on Woocommerce is a plugin that allows you to receive Zelle payments on your website with WooCommerce.
+**HPOS compatibility & WooCommerce Blocks support**
 **Unlock more great features for you and your customers and priority support with a PRO license. [Upgrade](https://theafricanboss.com/zelle)**
+
+Checkout with Zelle on Woocommerce is a plugin that allows you to receive Zelle payments on your website with WooCommerce.
+
+**Disclaimer:** We are not affiliated with, endorsed by, sponsored by, or in any official partnership with Zelle or Early Warning Services, LLC. The use of their name, trademark, and branding is solely for the purpose of providing a convenient way for users to make payments through Zelle. All rights to the name, trademark, and branding of Zelle are owned by Early Warning Services, LLC.
 
 = More information =
 
 For more details about this woocommerce extension, **please visit [The African Boss](https://theafricanboss.com/zelle)**
 See available screenshots or the store example of [Gura Stores](https://gurastores.com/test/) for visual details
+
+= PRO or customized version =
+
+Visit [The African Boss](https://theafricanboss.com/zelle) to unlock PRO features and priority support.
+
+= Demo =
+
+An example of the plugin in use is the following store:
+
+[Gura Stores](https://gurastores.com/test/)
+
+This plugin displays Zelle information
+
+See the screenshots or the store example of [Gura Stores](https://gurastores.com/test/) for visual details.
+
+= Disclaimer Regarding Use of Name, Trademark, and Branding of Zelle =
+
+This plugin is not affiliated with, endorsed by, or in any way associated or partnered with Zelle or Early Warning Services, LLC. The use of their name, trademark, and branding is solely for the purpose of providing a convenient way for users to make payments through Zelle. All rights to the name, trademark, and branding of Zelle are owned by Early Warning Services, LLC.
+The plugin does not claim any ownership or rights to the name, trademark, or branding.
+
+The plugin is provided "as is" and the developers are not responsible for any issues or disputes that may arise from the use of the name, trademark, or branding.
+By using this plugin, you acknowledge and agree that you are solely responsible for your use of Zelle.
+
+If you are a representative of Zelle or any other rights holder and believe that any content in this plugin violates your intellectual property rights or misrepresents an affiliation, please contact us at info@theafricanboss.com and we will promptly address the issue.
 
 == Screenshots ==
 
@@ -105,13 +133,20 @@ After activating the plugin, add your Zelle information such as your Zelle name,
 
 == Upgrade Notice ==
 
-= 4.0 =
-This update is a major upgrade, enhancement, compatibility release. Updating is highly recommended.
-
-= 3.1.2 =
+= 4.1 =
 This update is a feature, enhancement, compatibility, maintenance and security release. Updating is highly recommended.
 
 == Changelog ==
+
+= 4.1 May 15, 2025 =
+- Refactored code across plugin for better performance
+- Added blueprint.json to the plugin
+- Fixed wc_zelle_qrcode when no QR code URL is provided
+- Fixed [E_DEPRECATED] Creation of dynamic property with AllowDynamicProperties
+- Fixed QR code styling for #wc_zelle_qrcode img size
+- Fixed wc_get_orders matching orders for processing in wc_zelle_find_zelle_order
+- Fixed load_plugin_textdomain was called incorrectly error with init load_plugin_textdomain and get_plugin_data fix
+- Updated Freemius, Woocommerce and Wordpress compatibility
 
 = 4.0 Jun 15, 2024 =
 - Fixed enroll.zellepay.com QR code matching issue: wc_zelle_qrcode_url

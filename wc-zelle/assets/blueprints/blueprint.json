@@ -1,0 +1,27 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"login": true,
+	"siteOptions": {
+		"blogname": "Test Checkout with Zelle on WooCommerce",
+		"blogdescription": "Checkout with Zelle"
+	},
+	"landingPage": "/checkout/?add-to-cart=15",
+	"plugins": ["woocommerce", "wc-zelle"],
+	"steps": [
+		{
+			"step": "importWxr",
+			"file": {
+				"resource": "url",
+				"url": "https://plugins.svn.wordpress.org/woocommerce/trunk/sample-data/sample_products.xml"
+			}
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php require_once 'wordpress/wp-load.php'; update_option( 'woocommerce_onboarding_profile', array( 'skipped' => true ) ); ?>"
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php require_once 'wordpress/wp-load.php'; update_option( 'woocommerce_zelle_settings', array( 'enabled' => 'yes', 'ReceiverZELLENo' => '+1234567890', 'ReceiverZelleOwner' => 'Business Inc', 'ReceiverZELLEEmail' => 'yourzelle@example.com' ) ); ?>"
+		}
+	]
+}

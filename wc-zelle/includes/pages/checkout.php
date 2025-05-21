@@ -3,13 +3,13 @@
 if ( !defined( 'ABSPATH' ) ) {
     exit;
 }
+$checkout_html = '';
 global $woocommerce;
 //$WC_Cart = new WC_Cart();
+$amount = $woocommerce->cart->total;
 //$total = $WC_Cart->get_total();
 $total = $woocommerce->cart->get_total();
 //$total = $woocommerce->cart->total;
-$amount = $woocommerce->cart->total;
-$checkout_html = '';
 $checkout_html .= '<fieldset id="wc-' . esc_attr( $this->id ) . '-form" data-plugin="' . wp_kses_post( WCZELLE_PLUGIN_VERSION ) . '">';
 do_action( 'woocommerce_form_start', $this->id );
 // upgrade display_zelle

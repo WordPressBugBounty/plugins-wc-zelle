@@ -43,7 +43,7 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
             $this->toggleCredits = $this->get_option( 'toggleCredits' );
             // hold stock admin_url('admin.php?page=wc-settings&tab=products&section=inventory)
             $new = ' <sup style="color:#0c0">NEW</sup>';
-            $newFeature = " <sup style='color:#c00;'>NEW FEATURE</sup>";
+            $newFeature = " <sup style='color:#0c0;'>NEW FEATURE</sup>";
             $improved = " <sup style='color:#0c0;'>IMPROVED</sup>";
             $improvedFeature = " <sup style='color:#0c0;'>IMPROVED FEATURE</sup>";
             $comingSoon = " <sup style='color:#00c;'>COMING SOON</sup>";
@@ -339,20 +339,20 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
             $qr_code = "";
             $payment_url = $this->wc_zelle_url( $amount );
             $qr_code_url = $this->wc_zelle_qrcode_url( $amount );
+            if ( empty( trim( $qr_code_url ) ) ) {
+                return $qr_code;
+            }
             if ( strpos( $payment_url, 'https://enroll.zellepay.com/qr-codes' ) === false ) {
                 $qr_code = '<img style="float: none!important; min-height:250px; min-width:250px; max-height:auto!important; max-width:250px!important;" alt="' . esc_attr( $this->method_title ) . ' link" src="' . esc_attr( $qr_code_url ) . '">';
                 $qr_code = '<a class="qr" href="' . esc_url( $payment_url ) . '" target="_blank">' . $qr_code . '</a>';
                 return wp_kses_post( $qr_code );
-            }
-            if ( empty( trim( $qr_code_url ) ) ) {
-                return $qr_code;
             }
             if ( $type === "advanced" ) {
                 $qr_code .= '<a href="' . esc_url( $payment_url ) . '" target="_blank">';
                 // $qr_code .= '<p>' . esc_html__( 'If using the Zelle app, scan/click below', WCZELLE_PLUGIN_TEXT_DOMAIN ) . ':</p>';
                 $default_qrcode = '<img class="logo-qr mb-1" width="150px" height="150px" src="' . esc_attr( $qr_code_url ) . '" />';
                 $qr_code .= '<div id="wc_zelle_qrcode">' . $default_qrcode . '</div>';
-                $qr_code .= '</a><p class="text-center mb-1">' . esc_html__( 'Scan with your Camera app', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '<br />' . esc_html__( 'or click the button below', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</p>
+                $qr_code .= '</a><p class="text-center mb-1">' . esc_html__( 'Scan with your Zelle/Bank app', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '<br />' . esc_html__( 'or click the button below', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</p>
 				<a class="btn btn-dark" role="button" href="' . esc_url( $payment_url ) . '" target="_blank" style="padding: 10px 35px;border-radius: 30px;">Pay with Zelle  <img width="30px" height="30px" alt="Zelle logo" src="' . esc_attr( WCZELLE_PLUGIN_DIR_URL . 'assets/images/zelle_35.png' ) . '" /></a>';
             } else {
                 $qr_code = '<a class="logo-qr" href="' . esc_url( $payment_url ) . '" target="_blank"><img style="float: none!important; max-height:150px!important; max-width:100px!important;" alt="' . esc_attr( $this->method_title ) . ' link" src="' . esc_attr( $qr_code_url ) . '"></a>';

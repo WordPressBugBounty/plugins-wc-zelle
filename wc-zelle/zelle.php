@@ -6,16 +6,16 @@ Plugin URI: https://theafricanboss.com/zelle
 Description: The top bank to bank payments method now on WordPress. Receive Zelle payments on your website with WooCommerce + Zelle
 Author: The African Boss
 Author URI: https://theafricanboss.com
-Version: 4.0
+Version: 4.1
 Requires PHP: 5.0
 Requires at least: 5.0
-Tested up to: 6.5.4
+Tested up to: 6.8.1
 WC requires at least: 6.0.0
-WC tested up to: 9.0.1
+WC tested up to: 9.8.5
 Text Domain: wc-zelle
 Domain Path: languages
 Created: 2021
-Copyright 2024 theafricanboss.com All rights reserved
+Copyright 2025 theafricanboss.com All rights reserved
 */
 // Reach out to The African Boss for website and mobile app development services at theafricanboss@gmail.com
 // or at www.TheAfricanBoss.com or download our app at www.TheAfricanBoss.com/app
@@ -25,7 +25,12 @@ if ( !defined( 'ABSPATH' ) ) {
     exit;
 }
 include_once ABSPATH . 'wp-admin/includes/plugin.php';
-$plugin_data = get_plugin_data( __FILE__ );
+$plugin_data = get_plugin_data( 
+    __FILE__,
+    false,
+    /* $translate */
+    false
+ );
 define( 'WCZELLE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WCZELLE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'WCZELLE_PLUGIN_DIR_URL', plugins_url( '/', __FILE__ ) );
@@ -95,11 +100,9 @@ if ( function_exists( 'zelle_fs' ) ) {
         require_once WCZELLE_PLUGIN_DIR . 'includes/notifications/woocommerce.php';
     }
     // translations
-    function wczelle_load_textdomain() {
+    add_action( 'init', function () {
         load_plugin_textdomain( WCZELLE_PLUGIN_TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
-    }
-
-    add_action( 'plugins_loaded', 'wczelle_load_textdomain' );
+    } );
     // if ( current_user_can( 'manage_options' ) ) { // needs WPINC . '/pluggable.php'
     if ( is_admin() ) {
         add_action( 'plugin_action_links_' . WCZELLE_PLUGIN_BASENAME, function ( $links ) {
@@ -115,8 +118,11 @@ if ( function_exists( 'zelle_fs' ) ) {
             $currentScreen = get_current_screen();
             // var_dump($currentScreen);
             if ( strpos( $currentScreen->id, 'wc_zelle' ) !== false || strpos( $currentScreen->id, 'wc-zelle' ) !== false ) {
-                wp_register_style( 'wc_zelle_bootstrap', WCZELLE_PLUGIN_DIR_URL . 'assets/css/bootstrap.min.css' );
-                wp_enqueue_style( 'wc_zelle_bootstrap' );
+                $bootstrap = 'bootstrap';
+                if ( !wp_style_is( $bootstrap, 'enqueued' ) ) {
+                    wp_register_style( $bootstrap, WCCASHAPP_PLUGIN_DIR_URL . "assets/css/{$bootstrap}.min.css" );
+                    wp_enqueue_style( $bootstrap );
+                }
             } else {
                 return;
             }

@@ -41,7 +41,7 @@ if ( is_checkout() ) {
         null,
         true
     );
-    $payment_url = $this->wc_zelle_url();
+    $payment_url = $this->wc_zelle_url( 1 );
     $wc_zelle_qrcode = array(
         "url" => $payment_url,
     );

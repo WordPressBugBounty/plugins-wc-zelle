@@ -23,6 +23,11 @@
   font-weight: bolder!important;
 }
 
+#wc_zelle_qrcode img {
+  height: 150px;
+  width: 150px;
+}
+
 #wc-zelle-form .logo-qr {
 	display: inline-block !important;
 	float: none !important;

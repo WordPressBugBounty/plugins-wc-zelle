@@ -1,6 +1,7 @@
 <?php if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 if ( !class_exists( 'WC_Zelle_Update_Order' ) && class_exists( 'WC_Zelle_Gateway' ) ):
+#[\AllowDynamicProperties]
 class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
 
   function register() {
@@ -10,18 +11,18 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
 
   // Create CPT
   function wc_zelle_cpt() {
-    if ( class_exists( 'Woocommerce' ) && !post_type_exists( 'zelle-receipts' ) ) {
-      register_post_type( 'zelle-receipts',
+    if ( class_exists( 'Woocommerce' ) && !post_type_exists( "{$this->id}-receipts" ) ) {
+      register_post_type( "{$this->id}-receipts",
         array(
           'labels' => array(
-              'name' => __( 'Zelle Receipts', WCZELLE_PLUGIN_TEXT_DOMAIN ),
-              'singular_name' => __( 'Zelle Receipt', WCZELLE_PLUGIN_TEXT_DOMAIN )
+            "name" => __( "{$this->method_title} Receipts", WCZELLE_PLUGIN_TEXT_DOMAIN ),
+            "singular_name" => __( "{$this->method_title} Receipt", WCZELLE_PLUGIN_TEXT_DOMAIN ),
           ),
           'public' => false,
           'show_ui' => true,
           'show_in_rest' => false,
           'has_archive' => false,
-          'rewrite' => array('slug' => 'zelle-receipts'),
+          'rewrite' => array('slug' => "{$this->id}-receipts"),
           'show_in_rest' => false,
           'menu_icon' => 'dashicons-money-alt',
           'menu_position' => 56,
@@ -32,10 +33,10 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
 
   // Create REST API route
   function wc_zelle_update_order_route() {
-    register_rest_route( 'wc-zelle/v1', '/update-zelle-order', array(
+    register_rest_route( "wc-{$this->id}/v1", "/update-{$this->id}-order", array(
       'methods' => 'POST',
-      'callback' => array( $this, 'wc_zelle_emrcpts_order_update'),
-      'permission_callback' => '__return_true',
+      "callback" => array( $this, "wc_{$this->id}_emrcpts_order_update"),
+      "permission_callback" => "__return_true",
     ) );
   }
 
@@ -97,13 +98,13 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     $message .= "Status: " . http_response_code();
     // $message_array['status'] = http_response_code();
 
-    // echo $message;
-    $this->wcz_log($message);
-    // return $message;
+    // echo wp_kses_post($message);
+    $this->wcz_log(wp_kses_post($message));
+    // return wp_kses_post($message);
 
     $emrcpts_response = array(
       'status' => http_response_code(),
-      'message' => $message,
+      'message' => wp_kses_post($message),
       'data' => $message_array,
     );
     // echo json_encode($emrcpts_response);
@@ -156,7 +157,7 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     if ( $isJSON ) {
       $response = array(
         'status' => $verified,
-        'message' => $message,
+        "message" => wp_kses_post($message),
       );
       return $response;
     } else {
@@ -177,10 +178,12 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     }
 
     if (empty($order)) {
-      // 'orderby' => '<' . ( time() - 3600 ), // ordered before the last hour
-      $orders = wc_get_orders( ['limit' => 5, 'payment_method' => 'zelle', 'orderby' => time() - 3600, 'status' => array('wc-on-hold')] );
+      // 'orderby' => '<' . ( time() - 3600 ), 'fields' => 'ids' // ordered before the last hour
+      // $orders = wc_get_orders( ['limit' => 5, 'payment_method' => $this->id, 'orderby' => time() - 3600, 'status' => array('wc-on-hold')] );
+      // $orders = wc_get_orders( ['limit' => 5, 'payment_method' => $this->id, 'orderby' => 'date', 'order' => 'DESC', 'date_created' => '>' . ( time() - 3600 ), 'status' => array('wc-on-hold')] );
+      $orders = wc_get_orders( ["limit" => 5, "payment_method" => $this->id, "orderby" => "date", "order" => "DESC", "status" => array("wc-on-hold")] );
       // print_r($orders);
-      $ordercountmsg = count($orders) . " recent order(s) match(es) your criteria: payment_method: zelle, ordered in the last hour, status: on-hold\n";
+      $ordercountmsg = count($orders) . " recent order(s) match(es) your criteria: payment_method: {$this->id}, ordered in the last hour, status: on-hold\n";
       $post_content .= $ordercountmsg;
       if (count($orders) > 0) {
         $found_order = false;
@@ -197,7 +200,7 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
             $order_id = !empty($order) ? $orderid : $order_id;
             $accountid = empty($accountid) ? $accountid_meta : $accountid;
             $found_order = true;
-            $post_content .= "Recent Zelle order $order_id with accountid: $accountid matched amount $amount == $orderamount\n";
+            $post_content .= "Recent {$this->method_title} order $order_id with accountid: $accountid matched amount $amount == $orderamount\n";
           } else {
             $order = array();
             // $order_id = null;
@@ -210,21 +213,21 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
       }
     }
 
-    if ($post_title && $post_content && post_type_exists( 'zelle-receipts' ) ) {
-        $zelle_receipt = array(
-            'post_title' => $post_title,
-            'post_content' => "$post_content.<br><br>$email_subject",
-            'post_type' => 'zelle-receipts',
-            'post_status' => 'private',
-        );
-        $receipt_post_id = wp_insert_post( $zelle_receipt );
-        if ($receipt_post_id) {
-            $post_content .= "Zelle Receipt ID: $receipt_post_id created successfully\n";
-            http_response_code(201);
-        } else {
-            $post_content .= "Zelle Receipt creation failed\n";
-            http_response_code(500);
-        }
+    if ($post_title && $post_content && post_type_exists( "{$this->id}-receipts" ) ) {
+      $zelle_receipt = array(
+          "post_title" => $post_title,
+          "post_content" => "$post_content.<br><br>$email_subject",
+          "post_type" => "{$this->id}-receipts",
+          "post_status" => "private",
+      );
+      $receipt_post_id = wp_insert_post( $zelle_receipt );
+      if ($receipt_post_id) {
+          $post_content .= "{$this->method_title} Receipt ID: $receipt_post_id created successfully\n";
+          http_response_code(201);
+      } else {
+          $post_content .= "{$this->method_title} Receipt creation failed\n";
+          http_response_code(500);
+      }
     }
 
     // echo $post_content;
