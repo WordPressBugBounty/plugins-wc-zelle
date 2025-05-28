@@ -2,7 +2,7 @@
 Contributors: theafricanboss
 Donate Link: https://gurastores.com/get-cash
 Tags: zelle,bank transfer,woocommerce,payments,money transfer
-Stable tag: 4.1
+Stable tag: 4.1.1
 Requires PHP: 5.0
 Requires at least: 5.0
 Tested up to: 6.8.1
@@ -133,12 +133,12 @@ After activating the plugin, add your Zelle information such as your Zelle name,
 
 == Upgrade Notice ==
 
-= 4.1 =
+= 4.1.1 =
 This update is a feature, enhancement, compatibility, maintenance and security release. Updating is highly recommended.
 
 == Changelog ==
 
-= 4.1 May 15, 2025 =
+= 4.1.1 May 15, 2025 =
 - Refactored code across plugin for better performance
 - Added blueprint.json to the plugin
 - Fixed wc_zelle_qrcode when no QR code URL is provided

@@ -1,12 +1,11 @@
 <?php
-
 /*
 Plugin Name: Checkout with Zelle on Woocommerce
 Plugin URI: https://theafricanboss.com/zelle
 Description: The top bank to bank payments method now on WordPress. Receive Zelle payments on your website with WooCommerce + Zelle
 Author: The African Boss
 Author URI: https://theafricanboss.com
-Version: 4.1
+Version: 4.1.1
 Requires PHP: 5.0
 Requires at least: 5.0
 Tested up to: 6.8.1
@@ -17,15 +16,16 @@ Domain Path: languages
 Created: 2021
 Copyright 2025 theafricanboss.com All rights reserved
 */
+
 // Reach out to The African Boss for website and mobile app development services at theafricanboss@gmail.com
 // or at www.TheAfricanBoss.com or download our app at www.TheAfricanBoss.com/app
 // If you are using this version, please send us some feedback
 // via email at theafricanboss@gmail.com on your thoughts and what you would like improved
-if ( !defined( 'ABSPATH' ) ) {
-    exit;
-}
+
+if ( !defined( 'ABSPATH' ) ) { exit; }
+
 include_once ABSPATH . 'wp-admin/includes/plugin.php';
-$plugin_data = get_plugin_data( 
+$plugin_data = get_plugin_data(
     __FILE__,
     false,
     /* $translate */
@@ -120,7 +120,7 @@ if ( function_exists( 'zelle_fs' ) ) {
             if ( strpos( $currentScreen->id, 'wc_zelle' ) !== false || strpos( $currentScreen->id, 'wc-zelle' ) !== false ) {
                 $bootstrap = 'bootstrap';
                 if ( !wp_style_is( $bootstrap, 'enqueued' ) ) {
-                    wp_register_style( $bootstrap, WCCASHAPP_PLUGIN_DIR_URL . "assets/css/{$bootstrap}.min.css" );
+                    wp_register_style( $bootstrap, WCZELLE_PLUGIN_DIR_URL . "assets/css/{$bootstrap}.min.css" );
                     wp_enqueue_style( $bootstrap );
                 }
             } else {
