@@ -1,175 +1,395 @@
-.align-items-center {
-  align-items: center!important;
+/*
+ * Styles for the Zelle checkout box, thank you page and popup, kept minimal so the theme's styles apply.
+ * Sizes are in em and colors inherited; the popup uses the Canvas/CanvasText system colors (which follow light/dark mode) through overridable custom properties.
+ */
+
+/* The Zelle details: label, value and Copy on one line each */
+
+.wcz-details,
+.wcz-details dt,
+.wcz-details dd {
+  margin: 0;
+  padding: 0;
 }
 
-.justify-content-between {
-  justify-content: space-between!important;
+.wcz-details {
+  margin-bottom: .75em;
 }
 
-.d-flex {
-  display: flex!important;
-}
-
-.flex-fill {
-  flex: 1 1 auto!important;
-}
-
-.ms-1 {
-  margin-left: .25rem!important;
-}
-
-.copytxt {
-  border: none;
-  font-weight: bolder!important;
-}
-
-#wc_zelle_qrcode img {
-  height: 150px;
-  width: 150px;
-}
-
-#wc-zelle-form .logo-qr {
-	display: inline-block !important;
-	float: none !important;
-	height: 100px !important;
-	width: 100px !important;
-	max-height: 100px !important;
-	max-width: 100px !important;
-	min-height: 100px !important;
-	min-width: 100px !important;
-}
-
-#wc-zelle-form a,
-#wc-zelle-form a:before,
-#wc-zelle-form a:after,
-#wc-zelle-form a:hover,
-#wc-zelle-form a:active, .paym_link:hover {
-	content: none;
-	text-decoration: none!important;
-}
-
-#wc-zelle-form-pay .tutorial {
-	width: 80% !important;;
-	height: auto !important;;
-}
-
-#wc-zelle-form .my-2 {
-  margin-top: .5rem!important;
-  margin-bottom: .5rem!important;
-}
-
-#wc-zelle-form .row {
-  --bs-gutter-x: 1.5rem;
-  --bs-gutter-y: 0;
+.theafricanboss-row {
   display: flex;
-  flex-wrap: wrap;
-  margin-top: calc(-1 * var(--bs-gutter-y));
-  margin-bottom: calc(-1 * var(--bs-gutter-y));
-  margin-right: calc(-.5 * var(--bs-gutter-x));
-  margin-left: calc(-.5 * var(--bs-gutter-x));
+  align-items: baseline;
+  gap: .75em;
+  padding: .3em 0;
 }
 
-#wc-zelle-form .align-items-center {
-  align-items: center!important;
+.theafricanboss-row dt {
+  flex: 0 0 auto;
+  min-width: 3.5em;
+  opacity: .7;
 }
 
-#wc-zelle-form .row > * {
-  flex-shrink: 0;
-  width: 100%;
-  max-width: 100%;
-  padding-right: calc(var(--bs-gutter-x) * .5);
-  padding-left: calc(var(--bs-gutter-x) * .5);
-  margin-top: var(--bs-gutter-y);
+.theafricanboss-row dd {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5em;
 }
 
-#wc-zelle-form .col-half, #wc-zelle-form .col-full {
-  display: block;
-  width: 100%;
+/* Long emails wrap rather than push Copy off the row. user-select, so one tap takes
+   the whole value - the fallback for anyone whose browser blocks the clipboard */
+.theafricanboss-value {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  -webkit-user-select: all;
+  user-select: all;
 }
-@media (min-width:768px) {
-  #wc-zelle-form .col-half {
-    flex: 0 0 auto;
-    width: 45%;
+
+/* Small warning outline, not WooCommerce's .button (far taller than the row). !important so theme button colors and sizes never make it unreadable */
+.theafricanboss-row .theafricanboss-copy {
+  flex: 0 0 auto;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 2em;
+  margin: 0 !important;
+  padding: 0 .4em !important;
+  font: inherit;
+  font-size: .8em !important;
+  font-weight: 600 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  color: var(--wcz-warning, #b45309) !important;
+  background: transparent !important;
+  border: 1px solid var(--wcz-warning, #b45309) !important;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  cursor: pointer;
+}
+
+.theafricanboss-row .theafricanboss-copy:hover,
+.theafricanboss-row .theafricanboss-copy:focus {
+  color: var(--wcz-warning, #b45309) !important;
+  background: transparent !important;
+  filter: brightness(.85);
+}
+
+.theafricanboss-row .theafricanboss-copy.success {
+  color: #008a20 !important;
+  border-color: #008a20 !important;
+}
+
+.theafricanboss-row .theafricanboss-copy.error {
+  color: #d63638 !important;
+  border-color: #d63638 !important;
+}
+
+/* Mouse focus drops the theme's focus ring; keyboard focus keeps one */
+.theafricanboss-row .theafricanboss-copy:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.theafricanboss-row .theafricanboss-copy:focus-visible {
+  outline: 2px solid var(--wcz-warning, #b45309);
+  outline-offset: 2px;
+}
+
+/* Zelle details beside the QR code. One column by default, two once there is room */
+
+.wcz-cols {
+  display: grid;
+  gap: 1rem;
+}
+
+.wcz-col {
+  min-width: 0;
+}
+
+.wcz-col-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (min-width: 600px) {
+  .wcz-cols-split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-#wc-zelle-form .flex-column {
-  flex-direction: column!important;
+/* QR code and Zelle payment button */
+
+.wcz-qr {
+  display: inline-block;
+  max-width: 100%;
 }
 
-#wc-zelle-form .d-flex {
-  display: flex!important;
-}
-
-#wc-zelle-form .flex-wrap {
-  flex-wrap: wrap!important;
-}
-
-#wc-zelle-form .justify-content-center {
-  justify-content: center!important;
-}
-
-#wc-zelle-form .mb-1 {
-  margin-bottom: .25rem!important;
-}
-
-#wc-zelle-form img, #wc-zelle-form svg {
-  vertical-align: middle;
-}
-
-#wc-zelle-form .text-center {
-  text-align: center!important;
-}
-
-#wc-zelle-form .btn-dark {
-  color: #fff;
-  background-color: #212529;
-  border-color: #212529;
-}
-
-#wc-zelle-form .form-control {
+.wcz-qr img,
+#wc_zelle_qrcode img,
+#wc_zelle_qrcode canvas,
+#wc_zelle_qrcode svg {
   display: block;
+  width: 150px;
+  height: 150px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.wcz-qr-note {
+  margin: .4em 0;
+  font-size: .85em;
+  opacity: .7;
+}
+
+/* Zelle brand button (as in Get Cash): logo then label on one line, over any theme button colors */
+a.button.wcz-pay-btn {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: .55em !important;
+  max-width: 100%;
+  white-space: nowrap !important;
+  background-color: var(--wcz-zelle, #6d1ed4) !important;
+  background-image: none !important;
+  border-color: var(--wcz-zelle, #6d1ed4) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+a.button.wcz-pay-btn:hover,
+a.button.wcz-pay-btn:focus {
+  background-color: var(--wcz-zelle, #6d1ed4) !important;
+  border-color: var(--wcz-zelle, #6d1ed4) !important;
+  color: #fff !important;
+  filter: brightness(.9);
+}
+
+a.button.wcz-pay-btn .wcz-pay-icon {
+  display: block !important;
+  flex: 0 0 auto;
+  width: 1.35em !important;
+  height: 1.35em !important;
+  max-width: none !important;
+  margin: 0 !important;
+  border-radius: .28em;
+  object-fit: contain;
+  box-shadow: 1px 1px 5px rgba(0, 0, 0, .2);
+}
+
+/* Popup: design 1 shows everything above once the customer clicks Place order */
+
+/* Both scoped past themes that redeclare display on these, so a promise of a popup
+   stays hidden until the script that delivers it is actually running */
+.wcz-popup[hidden],
+.wcz-popup-note[hidden] {
+  display: none !important;
+}
+
+.wcz-popup {
+  /* System colours, not a fixed light-mode palette - see the file comment above */
+  --wcz-popup-bg: Canvas;
+  --wcz-popup-color: CanvasText;
+  /* Mid-grey rather than black: a black border at low opacity is only visible on a
+     light surface, and Canvas can resolve dark */
+  --wcz-popup-border: rgba(128, 128, 128, .35);
+  /* The dimmed page behind the dialog, not the dialog itself - stays black regardless
+     of theme, the same as virtually every other modal overlay */
+  --wcz-popup-backdrop: rgba(0, 0, 0, .55);
+
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.wcz-popup-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--wcz-popup-backdrop);
+}
+
+.wcz-popup-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  padding: .375rem .75rem;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  background-clip: padding-box;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  border-radius: .25rem;
-  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  max-width: 640px;
+  max-height: calc(100vh - 2rem);
+  /* Fallback for browsers without Canvas/CanvasText */
+  background: #fff;
+  background: var(--wcz-popup-bg);
+  color: #1e1e1e;
+  color: var(--wcz-popup-color);
+  border-radius: .5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+  overflow: hidden;
 }
 
-#wc-zelle-form button, #wc-zelle-form input, #wc-zelle-form optgroup, #wc-zelle-form select, #wc-zelle-form textarea {
+.wcz-popup-header,
+.wcz-popup-footer {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  padding: .75rem 1rem;
+}
+
+.wcz-popup-header {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--wcz-popup-border);
+}
+
+.wcz-popup-footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--wcz-popup-border);
+}
+
+.wcz-popup-title {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
   margin: 0;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
+  font-size: 1.1rem;
 }
 
-#wc-zelle-form .me-2 {
-  margin-right: .5rem!important;
+.wcz-popup-title img {
+  width: 30px !important;
+  height: 30px !important;
 }
 
-#wc-zelle-form .form-label {
-  margin-bottom: .5rem;
+/* Red ×, never a theme button */
+.wcz-popup .wcz-popup-close {
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 .5rem !important;
+  font-size: 1.5rem !important;
+  line-height: 1 !important;
+  color: #d63638 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer;
 }
 
-#wc-zelle-form .fw-bold {
-  font-weight: 700!important;
+.wcz-popup .wcz-popup-close:hover,
+.wcz-popup .wcz-popup-close:focus {
+  color: #b32d2e !important;
+  background: transparent !important;
 }
 
-#wc-zelle-form .position-relative {
-  position: relative!important;
+.wcz-popup-body {
+  flex: 1 1 auto;
+  padding: 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-#wc-zelle-form .w-250 {
-  max-width: 250px;
+.wcz-popup-body fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
-#wc-zelle-form .my-3 {
-  margin-top: 1rem!important;
-  margin-bottom: 1rem!important;
+.wcz-popup-body > :first-child,
+.wcz-popup-body fieldset > :first-child {
+  margin-top: 0;
+}
+
+/* The payment confirmation checkbox on its own row, styled by the theme through WooCommerce's checkbox classes */
+.wcz-popup-confirmed {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+/* Not .woocommerce-error, which checkout.js removes on every checkout error */
+.wcz-popup-error {
+  flex: 1 1 100%;
+  margin: 0;
+  color: red;
+}
+
+.wcz-popup-error[hidden] {
+  display: none !important;
+}
+
+.wcz-busy {
+  opacity: .6;
+  pointer-events: none;
+}
+
+body.wcz-popup-open {
+  overflow: hidden;
+}
+
+/* Thank you page order status (PRO) */
+
+.wcz-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5em;
+}
+
+.wcz-status-icon {
+  flex: 0 0 auto;
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.wcz-spinner {
+  flex: 0 0 auto;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  opacity: .6;
+  animation: wcz-spin .8s linear infinite;
+}
+
+@keyframes wcz-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wcz-spinner {
+    animation-duration: 3s;
+  }
+}
+
+@media (max-width: 600px) {
+  .wcz-popup {
+    padding: 0;
+  }
+
+  .wcz-popup-dialog {
+    max-width: none;
+    max-height: 100vh;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .wcz-popup-footer > * {
+    flex: 1 1 100%;
+  }
 }

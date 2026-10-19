@@ -3,7 +3,7 @@
 if ( !defined( 'ABSPATH' ) ) {
     exit;
 }
-function wczelle_zoho_mail(
+function wc_zelle_zoho_mail(
     $to,
     $subject,
     $message,

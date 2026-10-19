@@ -2,12 +2,13 @@
 Contributors: theafricanboss
 Donate Link: https://gurastores.com/get-cash
 Tags: zelle,bank transfer,woocommerce,payments,money transfer
-Stable tag: 4.1.1
-Requires PHP: 5.0
-Requires at least: 5.0
-Tested up to: 6.8.1
+Stable tag: 5.0
+Requires PHP: 7.0
+Requires at least: 6.0
+Tested up to: 7.1.3
+Requires Plugins: woocommerce
 WC requires at least: 6.0.0
-WC tested up to: 9.8.5
+WC tested up to: 11.2.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -53,10 +54,11 @@ If you are a representative of Zelle or any other rights holder and believe that
 
 == Screenshots ==
 
-1. Checkout page view for customers using the Zelle payment method enabled.
+1. Checkout popup view (PRO) for customers using the Zelle payment method
 2. Plugin settings for the Zelle payment method and this information will be displayed to your customers
 3. Thank you page after placing the order via the Zelle payment method
 4. This is where the Zelle link/QR code brings the customer with a prefilled order information
+5. The free plugin checkout page look
 
 == Installation ==
 
@@ -131,12 +133,36 @@ After activating the plugin, add your Zelle information such as your Zelle name,
 
 **Unlock more great features for you and your customers and priority support with a PRO license. [Upgrade](https://theafricanboss.com/zelle)**
 
+== Disclaimer ==
+
+The term 'Zelle' is a trademark of Early Warning Services, LLC. This plugin uses the Zelle API but is not endorsed or affiliated with Early Warning Services, LLC.
+
 == Upgrade Notice ==
 
-= 4.1.1 =
+= 5.0 =
 This update is a feature, enhancement, compatibility, maintenance and security release. Updating is highly recommended.
+On-hold Zelle orders are cancelled automatically once WooCommerce's "Hold stock (minutes)" passes, like pending orders. Set this under WooCommerce › Settings › Products › Inventory if you confirm Zelle payments manually.
 
 == Changelog ==
+
+= 5.0 May-Oct 15, 2026 =
+- Added a popup design (PRO) that opens on Place order and shows Zelle payment details in a dialog, like modern payment methods
+- Added support for the popup design for Zelle info on the checkout page
+- Applied the popup experience to the WooCommerce classic checkout and Blocks checkout
+- The checkout popup shows the order number as the payment memo, and uses WooCommerce's checkout-draft status, on both classic and block checkout
+- Popup falls back to a normal Place order submission if JavaScript is unavailable or the popup fails to open
+- The Checkout Page Notice now appears inside the popup
+- Added the Zelle Tag field and setting
+- Improved Zelle payment links and Zelle QR code handling
+- Removed the "Sender's Zelle Tag/Email/Phone Number" field at checkout
+- Restyled the Copy buttons as secondary and stopped reading their values from hidden inputs
+- Popup content reuses WooCommerce's own button, input and form-row classes instead of custom styling
+- Simplified checkout.css to remove non-essential classes so the checkout adapts to any active theme
+- Better enqueue handling for scripts and styles
+- On-hold Zelle orders are cancelled automatically once WooCommerce's "Hold stock (minutes)" passes, like pending orders
+- Added syncing with emailreceipts.io accounts
+- Refactored code across plugin for better performance
+- Updated PHP, Freemius, Woocommerce and Wordpress compatibility
 
 = 4.1.1 May 15, 2025 =
 - Refactored code across plugin for better performance
@@ -225,5 +251,3 @@ This update is a feature, enhancement, compatibility, maintenance and security r
 
 = 1.0 Dec 15, 2021 =
 - Initial Release
-
-<?php code();?>

@@ -23,4 +23,3 @@ if ( $receipt_post_id ) {
         wp_update_post( $receipt_post );
     }
 }
-http_response_code( $response_code );

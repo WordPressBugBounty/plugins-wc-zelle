@@ -1,5 +1,7 @@
 <?php if ( ! defined( 'ABSPATH' ) ) { exit; }
 
+if (! $order ) { return; }
+
 // $order = wc_get_order( $order_id );
 $amount = $order->get_total();
 $currency = $order->get_currency();

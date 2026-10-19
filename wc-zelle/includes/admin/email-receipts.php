@@ -12,10 +12,89 @@ $connect_button_text = 'Connect ' . get_bloginfo( 'name' ) . ' to emailreceipts.
 $upgrade = null;
 $connect_button_text .= ' - LIMITED FEATURE FOR FREE USERS';
 $upgrade = 'As a free user, you are limited on how many orders get processed. <a href="' . $upgrade_url . '">Upgrade for more automation and so much more</a><br>Once upgraded, reconnect again to update emailreceipts.io systems';
+$count_orders = wc_zelle_count_orders();
+// The manual work emailreceipts.io takes over: matching each payment to its order and updating it
+$minutes_per_order = 8;
+$paid_orders = $count_orders['count_all'];
+// $paid_orders = $count_orders['count_all'] - $count_orders['count_canceled'];
+$manual_minutes = $paid_orders * $minutes_per_order;
+$manual_hours = (int) floor( $manual_minutes / 60 );
+$manual_time = ( $manual_hours < 1 ? "{$manual_minutes} min" : $manual_hours . '+ ' . (( 1 === $manual_hours ? 'hr' : 'hrs' )) );
+$yearly_hours = (int) round( $manual_minutes * 12 / 60 );
+// Actual customer wait, from each order's created date to its paid date
+$count_paid = (int) $count_orders['count_paid'];
+$wait_seconds = (int) $count_orders['wait_seconds'];
+$stats = array(
+    array(
+        'value' => ( $count_paid > 0 ? human_time_diff( 0, $wait_seconds ) : number_format_i18n( $paid_orders ) . '+' . (( 1 === $paid_orders ? ' hr' : ' hrs' )) ),
+        'class' => 'text-danger',
+        'label' => ( zelle_fs()->is_plan__premium_only( 'pro' ) ? 'Total customer wait for payment confirmation' : 'Customer waiting for payment confirmation you can erase' ),
+        'note'  => ( $count_paid > 0 ? 'Avg. ' . human_time_diff( 0, (int) ($wait_seconds / $count_paid) ) . ' per order' : 'Longer at night and on weekends' ),
+    ),
+    array(
+        'value' => number_format_i18n( ceil( $paid_orders / 3 ) ) . '+',
+        'class' => 'text-danger',
+        'label' => ( zelle_fs()->is_plan__premium_only( 'pro' ) ? 'Follow-ups and tickets avoided' : 'Follow-ups and tickets to avoid' ),
+        'note'  => '“Did you get my payment?” emails/calls/messages',
+    ),
+    array(
+        'value' => '< 1 min',
+        'class' => 'text-success',
+        'label' => ( zelle_fs()->is_plan__premium_only( 'pro' ) ? 'Customers wait with emailreceipts.io automated 24/7' : 'Customers wait if you had PRO + emailreceipts.io 24/7' ),
+        'note'  => '',
+    ),
+    array(
+        'value' => $manual_time,
+        'class' => 'text-success',
+        'label' => ( zelle_fs()->is_plan__premium_only( 'pro' ) ? 'Of your time saved this month' : 'Of your time you could save every month' ),
+        'note'  => $yearly_hours . '+ hr' . (( 1 === $yearly_hours ? '' : 's' )) . ' a year',
+    )
+);
 ?>
 
 <section>
     <div class="container">
+        <?php 
+if ( $paid_orders > 0 ) {
+    ?>
+        <div class="border shadow-sm mb-3 p-3">
+            <div class="row text-center">
+                <?php 
+    foreach ( $stats as $stat ) {
+        ?>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="bg-white py-3">
+                        <div class="h1 <?php 
+        echo esc_attr( $stat['class'] );
+        ?>"><?php 
+        echo esc_html( $stat['value'] );
+        ?></div>
+                        <div class=""><?php 
+        echo esc_html( $stat['label'] );
+        ?></div>
+                        <div class="small text-muted"><?php 
+        echo esc_html( $stat['note'] );
+        ?></div>
+                    </div>
+                </div>
+                <?php 
+    }
+    ?>
+            </div>
+
+            <h3><?php 
+    echo esc_html( "Your " . number_format_i18n( $paid_orders ) . " {$gateway->method_title} orders/month " . (( zelle_fs()->is_plan__premium_only( 'pro' ) ? "auto-confirm when integrated with emailreceipts.io" : "wait for slower and tedious manual confirmation." )) );
+    ?></h3>
+            <p class="small text-muted">*** <?php 
+    echo ( $count_paid > 0 ? esc_html( "Customer wait measured on your {$count_paid} paid orders, from order date to paid date." ) : '1 hr average customerwait without 24/7 support.' );
+    ?> Estimates: <?php 
+    echo esc_html( $minutes_per_order );
+    ?> min to match each payment manually, 1 in 3 customers following up.</p>
+        </div>
+        <?php 
+}
+?>
+
         <div class="text-white bg-success border rounded border-0 p-4 py-5">
             <div class="row">
                 <div class="col-md-10 col-xl-8 text-center d-flex d-sm-flex d-md-flex justify-content-center align-items-center mx-auto justify-content-md-start align-items-md-center justify-content-xl-center">
@@ -37,8 +116,12 @@ echo get_bloginfo( 'name' );
                 </div>
             </div>
         </div>
+
         <div class="text-center p-4 py-5">
-            <h2 class="mb-3">Zelle Institution Information</h2>
+            <h2 class="mb-3">Import & Sync Existing Zelle Accounts connected with emailreceipts.io</h2>
+            <a class="btn btn-primary btn-lg py-2 px-4 mb-4" href="https://emailreceipts.io/accounts/sync" target="_blank" rel="noopener">Login to emailreceipts.io & Import existing Zelle accounts</a>
+            <br><br>
+            <h2 class="mb-3">Connect a new Zelle Account Information</h2>
             <p class="text-danger"><strong>*** This is the information of the institution where you receive/send Zelle payments ***</strong></label>
             <p class="text-danger"><strong>Only Transactions that originate from this institution will be used to process your orders</strong></label>
 
@@ -49,7 +132,7 @@ echo urlencode( WCZELLE_PLUGIN_SLUG );
 
                 <input type="hidden" name="accountid"
                     placeholder="Financial Account ID" id="accountid" value="<?php 
-echo wp_kses_post( $gateway->ReceiverZELLEEmail );
+echo wp_kses_post( ( $gateway->ReceiverZelleTag ? $gateway->ReceiverZelleTag : $gateway->ReceiverZELLEEmail ) );
 ?>" />
 
                 <div class="mb-3">
@@ -131,6 +214,10 @@ echo wp_kses_post( "Zelle" );
 echo wp_kses_post( $gateway->ZelleForwardingURL );
 ?>" />
 
+                <input type="hidden" name="count_orders" id="count_orders" value="<?php 
+echo esc_attr( wp_json_encode( $count_orders ) );
+?>" />
+
                 <input type="hidden" name="extension" id="extension" value="<?php 
 echo WCZELLE_PLUGIN_SLUG;
 ?>" />
@@ -149,11 +236,27 @@ echo $connect_button_text;
 echo $upgrade;
 ?></p>
         </div>
+
+        <?php 
+if ( !zelle_fs()->is_plan__premium_only( 'pro' ) && !(class_exists( 'WCSMS_WooCommerce_Notification', false ) || is_plugin_active( 'wc-sms/wc-sms.php' ) || is_plugin_active( 'wc-sms-pro/wc-sms.php' )) ) {
+    ?>
+        <div class="border border-warning rounded p-4 text-center">
+            <p>You are currently not using <strong>SMS for WooCommerce</strong> with Checkout with Zelle on Woocommerce.<br>You can use it to send the Zelle order notifications and more. You can also use it with other payment methods to accomplish the same</p>
+            <p>
+                <a class="btn btn-warning" href="https://theafricanboss.com/freemius/wc-sms" target="_blank">SMS for Woocommerce PRO for a better Zelle checkout experience</a>
+                <a class="btn btn-link" href="<?php 
+    echo esc_url( admin_url( 'plugin-install.php?s=theafricanboss&tab=search&type=author' ) );
+    ?>">Free SMS for Woocommerce</a>
+            </p>
+        </div>
+        <?php 
+}
+?>
     </div>
 </section>
 
 <script>
-    document.querySelector('form').addEventListener('submit', function(e) {
+    document.getElementById('store-connect-form').addEventListener('submit', function(e) {
         var count = 0;
         var readonlys = document.getElementsByClassName('readonly');
         for (var i = 0; i < readonlys.length; i++) {
@@ -164,6 +267,14 @@ echo $upgrade;
         if (count > 0) {
             e.preventDefault();
             alert('Please set up the Zelle Name and Email in your plugin settings before you proceed');
+        }
+
+        // institutionemail validation
+        var institutionemail = document.getElementById('institutionemail').value.trim();
+        var accountemail = document.getElementById('accountemail').value.trim();
+        if ( institutionemail === accountemail ) {
+            e.preventDefault();
+            alert('Financial Institution Email can not be the same as your Zelle Account Email. It must be the email of the institution that sends you Zelle payment notifications.');
         }
     });
 </script>

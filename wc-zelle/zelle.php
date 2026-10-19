@@ -1,42 +1,42 @@
 <?php
+
 /*
 Plugin Name: Checkout with Zelle on Woocommerce
 Plugin URI: https://theafricanboss.com/zelle
 Description: The top bank to bank payments method now on WordPress. Receive Zelle payments on your website with WooCommerce + Zelle
 Author: The African Boss
 Author URI: https://theafricanboss.com
-Version: 4.1.1
-Requires PHP: 5.0
-Requires at least: 5.0
-Tested up to: 6.8.1
+Version: 5.0
+Requires PHP: 7.0
+Requires at least: 6.0
+Tested up to: 7.1.3
+Requires Plugins: woocommerce
 WC requires at least: 6.0.0
-WC tested up to: 9.8.5
+WC tested up to: 11.2.1
 Text Domain: wc-zelle
 Domain Path: languages
 Created: 2021
-Copyright 2025 theafricanboss.com All rights reserved
+Copyright 2026 theafricanboss.com All rights reserved
 */
-
 // Reach out to The African Boss for website and mobile app development services at theafricanboss@gmail.com
 // or at www.TheAfricanBoss.com or download our app at www.TheAfricanBoss.com/app
 // If you are using this version, please send us some feedback
 // via email at theafricanboss@gmail.com on your thoughts and what you would like improved
-
-if ( !defined( 'ABSPATH' ) ) { exit; }
-
-include_once ABSPATH . 'wp-admin/includes/plugin.php';
-$plugin_data = get_plugin_data(
-    __FILE__,
-    false,
-    /* $translate */
-    false
- );
+if ( !defined( 'ABSPATH' ) ) {
+    exit;
+}
+// include_once ABSPATH . 'wp-admin/includes/plugin.php';
+// $plugin_data = get_plugin_data( __FILE__, false, /* $translate */ false );
+$plugin_data = get_file_data( __FILE__, array(
+    'Version' => 'Version',
+), 'plugin' );
+define( 'WCZELLE_VERSION', $plugin_data['Version'] );
 define( 'WCZELLE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WCZELLE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'WCZELLE_PLUGIN_DIR_URL', plugins_url( '/', __FILE__ ) );
 define( 'WCZELLE_PLUGIN_SLUG', explode( "/", WCZELLE_PLUGIN_BASENAME )[0] );
-define( 'WCZELLE_PLUGIN_VERSION', WCZELLE_PLUGIN_SLUG . '-' . $plugin_data['Version'] );
-define( 'WCZELLE_PLUGIN_TEXT_DOMAIN', $plugin_data['TextDomain'] );
+define( 'WCZELLE_PLUGIN_VERSION', WCZELLE_PLUGIN_SLUG . '-' . WCZELLE_VERSION );
+define( 'WCZELLE_PLUGIN_TEXT_DOMAIN', 'wc-zelle' );
 define( 'WCZELLE_UPGRADE_URL', 'https://theafricanboss.com/freemius/wc-zelle' );
 if ( function_exists( 'zelle_fs' ) ) {
     zelle_fs()->set_basename( false, __FILE__ );
@@ -52,22 +52,22 @@ if ( function_exists( 'zelle_fs' ) ) {
                     define( 'WP_FS__PRODUCT_9162_MULTISITE', true );
                 }
                 // Include Freemius SDK.
-                require_once dirname( __FILE__ ) . '/freemius/start.php';
+                require_once dirname( __FILE__ ) . '/vendor/freemius/start.php';
                 $zelle_fs = fs_dynamic_init( array(
-                    'id'             => '9162',
-                    'slug'           => 'wc-zelle',
-                    'premium_slug'   => 'wc-zelle-pro',
-                    'type'           => 'plugin',
-                    'public_key'     => 'pk_a67d9b0ca5b20d4305d08cef08a05',
-                    'is_premium'     => false,
-                    'premium_suffix' => 'PRO',
-                    'has_addons'     => false,
-                    'has_paid_plans' => true,
-                    'trial'          => array(
+                    'id'               => '9162',
+                    'slug'             => 'wc-zelle',
+                    'premium_slug'     => 'wc-zelle-pro',
+                    'type'             => 'plugin',
+                    'public_key'       => 'pk_a67d9b0ca5b20d4305d08cef08a05',
+                    'is_premium'       => false,
+                    'premium_suffix'   => 'PRO',
+                    'has_addons'       => false,
+                    'has_paid_plans'   => true,
+                    'trial'            => array(
                         'days'               => 3,
                         'is_require_payment' => true,
                     ),
-                    'menu'           => array(
+                    'menu'             => array(
                         'slug'           => 'wc-settings',
                         'override_exact' => true,
                         'first-path'     => 'admin.php?page=wc-settings&tab=checkout&section=zelle',
@@ -76,7 +76,8 @@ if ( function_exists( 'zelle_fs' ) ) {
                             'slug' => 'wc-settings',
                         ),
                     ),
-                    'is_live'        => true,
+                    'is_live'          => true,
+                    'is_org_compliant' => true,
                 ) );
             }
             return $zelle_fs;
@@ -102,7 +103,7 @@ if ( function_exists( 'zelle_fs' ) ) {
     // translations
     add_action( 'init', function () {
         load_plugin_textdomain( WCZELLE_PLUGIN_TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
-    } );
+    }, 0 );
     // if ( current_user_can( 'manage_options' ) ) { // needs WPINC . '/pluggable.php'
     if ( is_admin() ) {
         add_action( 'plugin_action_links_' . WCZELLE_PLUGIN_BASENAME, function ( $links ) {
@@ -118,9 +119,10 @@ if ( function_exists( 'zelle_fs' ) ) {
             $currentScreen = get_current_screen();
             // var_dump($currentScreen);
             if ( strpos( $currentScreen->id, 'wc_zelle' ) !== false || strpos( $currentScreen->id, 'wc-zelle' ) !== false ) {
-                $bootstrap = 'bootstrap';
+                // Handle shared with wc-cashapp/wc-venmo. Not the bare 'bootstrap' handle, which a theme or another plugin may already own
+                $bootstrap = 'tab_bootstrap';
                 if ( !wp_style_is( $bootstrap, 'enqueued' ) ) {
-                    wp_register_style( $bootstrap, WCZELLE_PLUGIN_DIR_URL . "assets/css/{$bootstrap}.min.css" );
+                    wp_register_style( $bootstrap, WCZELLE_PLUGIN_DIR_URL . "assets/css/bootstrap.min.css" );
                     wp_enqueue_style( $bootstrap );
                 }
             } else {
@@ -129,41 +131,45 @@ if ( function_exists( 'zelle_fs' ) ) {
         } );
         require_once WCZELLE_PLUGIN_DIR . 'includes/admin/dashboard.php';
     }
-    add_filter( 'woocommerce_payment_gateways', 'zelle_add_gateway_class' );
-    //This action hook registers our PHP class as a WooCommerce payment gateway
-    function zelle_add_gateway_class(  $gateways  ) {
+    add_filter( 'woocommerce_payment_gateways', 'wc_zelle_add_gateway_class' );
+    function wc_zelle_add_gateway_class(  $gateways  ) {
         $gateways[] = 'WC_Zelle_Gateway';
         return $gateways;
     }
 
     add_action( 'before_woocommerce_init', function () {
-        if ( class_exists( Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-            Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+        if ( class_exists( '\\Automattic\\WooCommerce\\Utilities\\FeaturesUtil' ) ) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
         }
     } );
-    add_action( 'plugins_loaded', 'zelle_init_gateway_class' );
+    // WooCommerce Blocks support. Hooked here, not in the gateway constructor, because `woocommerce_blocks_loaded` has already fired by the time the gateway is built
+    add_action( 'woocommerce_blocks_loaded', 'wc_zelle_woocommerce_blocks_support' );
+    function wc_zelle_woocommerce_blocks_support() {
+        if ( !class_exists( '\\Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\AbstractPaymentMethodType' ) ) {
+            return;
+        }
+        require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_gateway_blocks.php';
+        add_action( 'woocommerce_blocks_payment_method_type_registration', function ( \Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
+            $payment_method_registry->register( new WC_Zelle_Gateway_Blocks_Support() );
+        } );
+    }
+
+    add_action( 'plugins_loaded', 'wc_zelle_init_gateway_class' );
     // init_gateway inside plugins_loaded action hook
-    function zelle_init_gateway_class() {
+    function wc_zelle_init_gateway_class() {
         // // include_once ABSPATH . 'wp-includes/pluggable.php';
         include_once ABSPATH . WPINC . '/pluggable.php';
         if ( class_exists( 'WC_Payment_Gateway' ) ) {
+            require_once WCZELLE_PLUGIN_DIR . 'includes/functions/markup.php';
+            require_once WCZELLE_PLUGIN_DIR . 'includes/functions/order_processed.php';
             require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_gateway.php';
             require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_update_order.php';
+            require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_sync_accounts.php';
+            require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_draft_order.php';
         } else {
             require_once WCZELLE_PLUGIN_DIR . 'includes/notifications/woocommerce.php';
         }
     }
 
-    // add_action( 'woocommerce_blocks_loaded', 'zelle_woocommerce_block_support' );
-    // function zelle_woocommerce_block_support() {
-    //     if ( class_exists ( 'WC_Payment_Gateway' ) && class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
-    // 		require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_gateway_blocks.php';
-    // 		add_action(
-    // 			'woocommerce_blocks_payment_method_type_registration',
-    // 			function( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
-    // 				$payment_method_registry->register( new WC_Zelle_Gateway_Blocks_Support() );
-    // 			}
-    // 		);
-    // 	}
-    // }
 }

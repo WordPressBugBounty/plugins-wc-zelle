@@ -1,87 +1,119 @@
-window.onload = function () {
-	// console.log("window.onload copy.js");
-	copyjs();
-	document
-		.querySelector("body")
-		.addEventListener("updated_checkout", async function () {
-			// console.log("updated_checkout copy.js");
-			copyjs();
-		});
-	var copyButtons = document.getElementsByClassName("copybtn");
-	for (var i = 0; i < copyButtons.length; i++) {
-		copyButtons[i].onclick = function () {
-			// console.log("click copy.js");
-			copyjs();
-		};
-	}
-};
-jQuery(document).ready(function ($) {
-	copyjs();
-	$("body").on("updated_checkout", function () {
-		copyjs();
-	});
-	$(".copybtn").on("click", function () {
-		copyjs();
-	});
-});
+// Copy to clipboard, byte identical in wc-zelle, wc-cashapp and wc-venmo under the shared tab_copy handle, so whichever registers first serves all three.
+// Handles both shared markups: .theafricanboss-row/-value/-copy, and the older .copytxt input + .copybtn.
 
-function copyjs() {
-	var copyButtons = document.getElementsByClassName("copybtn");
-	// console.log(copyButtons);
-	for (var i = 0; i < copyButtons.length; i++) {
-		copyButtons[i].addEventListener("click", function () {
+(function () {
+	"use strict";
+
+	var RESTORE_AFTER = 2000;
+
+	function strings() {
+		return (window.tab_copy || {}).i18n || {};
+	}
+
+	function trim(text) {
+		return (text || "").replace(/^\s+|\s+$/g, "");
+	}
+
+	// navigator.clipboard needs a secure context, so stores still on http:// and older
+	// browsers fall back to a throwaway textarea and execCommand
+	function writeToClipboard(text) {
+		if (window.navigator && navigator.clipboard && window.isSecureContext) {
+			return navigator.clipboard.writeText(text);
+		}
+
+		return new Promise(function (resolve, reject) {
+			var field = document.createElement("textarea");
+
+			field.value = text;
+			field.setAttribute("readonly", "readonly");
+			field.style.position = "fixed";
+			field.style.top = "-1000px";
+			field.style.opacity = "0";
+
+			document.body.appendChild(field);
+			field.select();
+			field.setSelectionRange(0, field.value.length);
+
+			var copied = false;
 			try {
-				var copyText =
-					this?.parentElement?.getElementsByClassName("copytxt")[0];
-				console.log(copyText);
-				copyText.removeAttribute("readonly");
-				copyText.removeAttribute("disabled");
-				if (copyText.type == "password") {
-					copyText.setAttribute("type", "text");
-				}
-				copyText.focus();
-				copyText.select();
-				var successful = document.execCommand("copy");
-				var msg = successful ? "successful" : "unsuccessful";
-				console.log("Copying text " + msg);
-				this.innerText = "Copied!";
-				this.classList.add("success");
-				copyText.setAttribute("readonly", "readonly");
+				copied = document.execCommand("copy");
 			} catch (err) {
-				this.innerText = "Failed!";
-				this.classList.add("error");
-				console.log("Oops, unable to copy");
-				console.log(err);
+				copied = false;
 			}
+
+			document.body.removeChild(field);
+
+			return copied ? resolve() : reject();
 		});
 	}
 
-	var copyInputs = document.getElementsByClassName("copytxt");
-	// console.log(copyInputs);
-	for (var i = 0; i < copyInputs.length; i++) {
-		copyInputs[i].addEventListener("click", function () {
-			var copyBtn = this?.parentElement?.getElementsByClassName("copybtn")[0];
-			console.log(copyBtn);
-			try {
-				this.removeAttribute("readonly");
-				this.removeAttribute("disabled");
-				if (this.type == "password") {
-					this.setAttribute("type", "text");
-				}
-				this.focus();
-				this.select();
-				var successful = document.execCommand("copy");
-				var msg = successful ? "successful" : "unsuccessful";
-				console.log("Copying text " + msg);
-				copyBtn.innerText = "Copied!";
-				copyBtn.classList.add("success");
-				this.setAttribute("readonly", "readonly");
-			} catch (err) {
-				copyBtn.innerText = "Failed!";
-				copyBtn.classList.add("error");
-				console.log("Oops, unable to copy");
-			}
-		});
+	function feedback(button, message, state) {
+		if (!button) {
+			return;
+		}
+
+		if (!button.getAttribute("data-tab-label")) {
+			button.setAttribute("data-tab-label", button.innerText);
+		}
+
+		button.innerText = message;
+		button.classList.add(state);
+
+		window.setTimeout(function () {
+			button.innerText = button.getAttribute("data-tab-label");
+			button.classList.remove("success");
+			button.classList.remove("error");
+		}, RESTORE_AFTER);
 	}
-	return true;
-}
+
+	// .theafricanboss-value span in its row, or the .copytxt input beside an older .copybtn
+	function valueNear(button) {
+		var row = button.closest(".theafricanboss-row");
+		if (row) {
+			var span = row.getElementsByClassName("theafricanboss-value")[0];
+			return span ? trim(span.textContent) : "";
+		}
+
+		var parent = button.parentElement;
+		var input = parent ? parent.getElementsByClassName("copytxt")[0] : null;
+		return input ? trim(input.value) : "";
+	}
+
+	function copy(text, button) {
+		if (!text) {
+			return;
+		}
+
+		var i18n = strings();
+
+		writeToClipboard(text)
+			.then(function () {
+				feedback(button, i18n.copied || "Copied!", "success");
+			})
+			.catch(function () {
+				feedback(button, i18n.failed || "Failed!", "error");
+			});
+	}
+
+	// Delegated, so it covers rows rebuilt on checkout refresh and values filled in later, without ever binding twice
+	document.addEventListener("click", function (event) {
+		var target = event.target;
+		if (!target || !target.closest) {
+			return;
+		}
+
+		var button = target.closest(".theafricanboss-copy") || target.closest(".copybtn");
+		if (button) {
+			event.preventDefault();
+			copy(valueNear(button), button);
+			return;
+		}
+
+		// Clicking an older readonly .copytxt input copies it too
+		var field = target.closest(".copytxt");
+		if (field) {
+			var parent = field.parentElement;
+			copy(trim(field.value), parent ? parent.getElementsByClassName("copybtn")[0] : null);
+		}
+	});
+})();

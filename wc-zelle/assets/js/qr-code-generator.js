@@ -1,6 +1,8 @@
-function QRCodeGenerator(element, qrcode_object) {
-	if (element == undefined || typeof qrcode_object.url == undefined) { return; }
-	console.log(element, qrcode_object);
+function TABQRCodeGenerator(element, qrcode_object) {
+	if (element == undefined || typeof qrcode_object.url == undefined) {
+		return;
+	}
+	// console.log(element, qrcode_object);
 
 	let qrcode;
 	try {
@@ -71,7 +73,7 @@ function QRCodeGenerator(element, qrcode_object) {
 				},
 			},
 		});
-		console.log("qrcode", qrcode);
+		// console.log("qrcode", qrcode);
 
 		let b64 = null;
 		// // https://github.com/kozakdenys/qr-code-styling/blob/master/README.md#qrcodestyling-methods
@@ -94,13 +96,13 @@ function QRCodeGenerator(element, qrcode_object) {
 					// console.log("element", element);
 
 					element.html(html);
-					console.log("QR Code", element);
+					// console.log("QR Code", element);
 					return resolve(element);
 				};
 			});
 		});
 	} catch (error) {
-		console.log(error);
+		console.error(error);
 		qrcode = document.createElement("img");
 		qrcode.src =
 			"https://emailreceipts.io/qr?d=150&t=" + encodeURI(qrcode_object.url);
@@ -114,6 +116,6 @@ function QRCodeGenerator(element, qrcode_object) {
 		// console.log("element", element);
 
 		element.html(html);
-		console.log("QR Code", element);
+		console.debug("QR Code", element);
 	}
 }

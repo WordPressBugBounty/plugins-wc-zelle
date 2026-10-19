@@ -1,12 +1,11 @@
 <?php if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 if ( !class_exists( 'WC_Zelle_Update_Order' ) && class_exists( 'WC_Zelle_Gateway' ) ):
-#[\AllowDynamicProperties]
 class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
 
   function register() {
     add_action( 'init', array( $this, 'wc_zelle_cpt' ) );
-    add_action( 'rest_api_init', array( $this, 'wc_zelle_update_order_route' ) );
+    add_filter( 'woocommerce_order_data_store_cpt_get_orders_query', array( $this, 'wc_zelle_order_number_query' ), 10, 2 );
   }
 
   // Create CPT
@@ -23,12 +22,17 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
           'show_in_rest' => false,
           'has_archive' => false,
           'rewrite' => array('slug' => "{$this->id}-receipts"),
-          'show_in_rest' => false,
+          // The orders capabilities, so only the roles that can manage orders (administrators,
+          // shop managers and the like) can read receipts - never editors or authors
+          'capability_type' => 'shop_order', // do not use manage_woocommerce
+          'map_meta_cap' => true,
+          'capabilities' => array( 'create_posts' => 'do_not_allow' ),
           'menu_icon' => 'dashicons-money-alt',
           'menu_position' => 56,
         )
       );
     }
+    add_action( 'rest_api_init', array( $this, 'wc_zelle_update_order_route' ) );
   }
 
   // Create REST API route
@@ -52,12 +56,12 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     // print_r($data->get_headers());
     // print_r($body);
 
-    $accountid = wp_kses_post($body['transactionaccountid']);
-    $money = wp_kses_post($body['transactionamount']);
-    $currency = wp_kses_post($body['transactioncurrency']);
-    $amount = wp_kses_post($body['transactionamount']);
-    $order_id = wp_kses_post($body['transactionorderid']);
-    $note = wp_kses_post($body['transactionnote']);
+    $accountid = wp_kses_post($body['transactionaccountid'] ?? '');
+    $money = wp_kses_post($body['transactionamount'] ?? '');
+    $currency = wp_kses_post($body['transactioncurrency'] ?? '');
+    $amount = wp_kses_post($body['transactionamount'] ?? '');
+    $order_id = wp_kses_post($body['transactionorderid'] ?? '');
+    $note = wp_kses_post($body['transactionnote'] ?? '');
     $receipt_post_id = null;
     $email_subject = !empty($body['emailsubject']) ? wp_kses_post($body['emailsubject']) : null;
 
@@ -79,7 +83,6 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
       $find_order = $this->wc_zelle_find_zelle_order($money, $amount, $order_id, $accountid, $email_subject, $receipt_post_id);
       $receipt_post_id = $find_order['receipt_post_id'];
       $order = $find_order['order'];
-      $accountid = !empty($order) && $order->meta_exists('zelle_sender') ? $order->get_meta('zelle_sender') : $accountid;
       $message .= "Account ID: $accountid\n";
       $message_array['accountid'] = $accountid;
       $order_id = !empty($order) ? $order->get_id() : $order_id;
@@ -88,27 +91,28 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
       $message .= $find_order['post_content'];
       $message_array['find_order'] = $find_order['post_content'];
       // $this->wcz_log( "zelle_emrcpts_order_update: " . $find_order['post_content'] );
-      require_once WCZELLE_PLUGIN_DIR . 'includes/admin/update-order.php';
+      // Not require_once: it sets $response_code for every request, not just the first
+      require WCZELLE_PLUGIN_DIR . 'includes/admin/update-order.php';
+      $status_code = ! empty($response_code) ? (int) $response_code : 200;
     } else {
       $message .= is_array($verify) ? "Invalid Signature: " . $verify['message'] . "\n" : "Invalid Request Signature was not verified.\n";
       $message_array['signature'] = is_array($verify) ? $verify['message'] : "Invalid Request Signature was not verified.";
       // $this->wcz_log( "zelle_emrcpts_order_update: " . $message_array['signature'] );
-      http_response_code(401);
+      $status_code = 401;
     }
-    $message .= "Status: " . http_response_code();
-    // $message_array['status'] = http_response_code();
+    $message .= "Status: " . $status_code;
 
-    // echo wp_kses_post($message);
     $this->wcz_log(wp_kses_post($message));
-    // return wp_kses_post($message);
 
     $emrcpts_response = array(
-      'status' => http_response_code(),
+      'status' => $status_code,
       'message' => wp_kses_post($message),
       'data' => $message_array,
     );
-    // echo json_encode($emrcpts_response);
-    return $emrcpts_response;
+
+    $response = rest_ensure_response( $emrcpts_response );
+    $response->set_status( $status_code );
+    return $response;
   }
 
   // Verify signature hash
@@ -165,14 +169,50 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     }
   }
 
+  function wc_zelle_order_number_query( $wp_query_args, $query_vars ) {
+    if ( ! empty($query_vars['wc_zelle_order_number']) ) {
+      $wp_query_args['meta_query'][] = array( 'key' => '_order_number', 'value' => (string) $query_vars['wc_zelle_order_number'] );
+    }
+    return $wp_query_args;
+  }
+
+  /**
+   * The order from the order number is not the ID under sequential order number plugins
+   * @param string|int $number Order number from the payment memo.
+   * @return WC_Order|null
+   */
+  function wc_zelle_order_from_number( $number ) {
+    $number = ltrim( trim( (string) $number ), '#' );
+    if ( '' === $number ) { return null; }
+
+    // Lets a custom order number setup answer for itself
+    $order = apply_filters( 'wc_zelle_order_from_number', null, $number );
+    if ( $order instanceof WC_Order ) { return $order; }
+
+    // _order_number, used by sequential order number plugins. HPOS takes a meta_query; the classic store ignores one, so it gets a query var wc_zelle_order_number_query() maps
+    $args = array( 'limit' => 1, 'return' => 'ids' );
+    if ( class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' ) && \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled() ) {
+      $args['meta_query'] = array( array( 'key' => '_order_number', 'value' => $number ) );
+    } else { $args['wc_zelle_order_number'] = $number; }
+    $found = wc_get_orders( $args );
+    $order = ! empty($found) ? wc_get_order( $found[0] ) : null;
+    if ( $order instanceof WC_Order && (string) $order->get_order_number() === $number ) { return $order; }
+
+    // Otherwise the number is the ID, but only if the order agrees that it is its number
+    $order = ctype_digit( $number ) ? wc_get_order( absint( $number ) ) : null;
+    if ( $order instanceof WC_Order && (string) $order->get_order_number() === $number ) { return $order; }
+
+    return null;
+  }
+
   function wc_zelle_find_zelle_order( $money, $amount, $order_id = null, $accountid = null, $email_subject = null, $receipt_post_id = null ) {
     $order = array();
     $post_title = null;
     $post_content = null;
     if (!empty($order_id)) {
-      $order = wc_get_order( $order_id );
+      $order = $this->wc_zelle_order_from_number( $order_id );
+      if ( ! $order instanceof WC_Order || $this->id !== $order->get_payment_method() ) { $order = array(); }
       $order_id = !empty($order) ? $order->get_id() : $order_id;
-      $accountid = empty($accountid) && $order ? $order->get_meta('zelle_sender') : $accountid;
       $post_title = "Receipt: $money from $accountid for $order_id";
       $post_content .= "$money from $accountid for $order_id.";
     }
@@ -192,13 +232,11 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
           $order = $orders[$orderind];
           $orderid = wp_kses_post($order->get_id());
           $orderamount = wp_kses_post(floatval($order->get_total()));
-          $accountid_meta = wp_kses_post($order->get_meta('zelle_sender'));
-          $post_content .= "Recent order $orderid: $orderamount vs provided: $amount from $accountid_meta.\n";
-          if ( $amount == $orderamount || (!empty($accountid) && $accountid_meta == $accountid) ) {
+          $post_content .= "Recent order $orderid: $orderamount vs provided: $amount.\n";
+          if ( $amount == $orderamount ) {
             $post_title = "Receipt: $money from $accountid for $order_id (extracted from recent Zelle order)";
             $post_content .= "$money from $accountid for $order_id.";
             $order_id = !empty($order) ? $orderid : $order_id;
-            $accountid = empty($accountid) ? $accountid_meta : $accountid;
             $found_order = true;
             $post_content .= "Recent {$this->method_title} order $order_id with accountid: $accountid matched amount $amount == $orderamount\n";
           } else {
@@ -223,10 +261,8 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
       $receipt_post_id = wp_insert_post( $zelle_receipt );
       if ($receipt_post_id) {
           $post_content .= "{$this->method_title} Receipt ID: $receipt_post_id created successfully\n";
-          http_response_code(201);
       } else {
           $post_content .= "{$this->method_title} Receipt creation failed\n";
-          http_response_code(500);
       }
     }
 
@@ -241,7 +277,12 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
 
 }
 
-$WC_Zelle_Update_Order = new WC_Zelle_Update_Order();
-$WC_Zelle_Update_Order->register();
+// Instantiated on init: the inherited gateway constructor translates strings,
+// which WordPress 6.7+ warns about when it happens before init.
+add_action( 'init', function () {
+  global $WC_Zelle_Update_Order;
+  $WC_Zelle_Update_Order = new WC_Zelle_Update_Order();
+  $WC_Zelle_Update_Order->register();
+}, 5 );
 
 endif;

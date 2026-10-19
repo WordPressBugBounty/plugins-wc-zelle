@@ -31,8 +31,8 @@ function wc_zelle_admin_menu() {
     );
     $upgrade_url = zelle_fs()->get_upgrade_url();
     add_menu_page(
-        null,
-        'ZELLE',
+        'Zelle',
+        'Zelle',
         $capability,
         $parent_slug,
         'wc-zelle-settings',
@@ -132,6 +132,56 @@ function wc_zelle_admin_menu() {
 }
 
 add_action( 'admin_menu', 'wc_zelle_admin_menu' );
+// Zelle orders of the last 30 days, shared by the automation page and the orders notice
+function wc_zelle_count_orders() {
+    $count_orders = get_transient( 'wc_zelle_count_orders' );
+    if ( is_array( $count_orders ) && isset( $count_orders['wait_seconds'] ) ) {
+        return $count_orders;
+    }
+    $count_orders = array(
+        'count_all'       => 0,
+        'amount'          => 0,
+        'count_canceled'  => 0,
+        'amount_canceled' => 0,
+        'count_paid'      => 0,
+        'wait_seconds'    => 0,
+    );
+    $page = 1;
+    do {
+        $orders = wc_get_orders( array(
+            'type'           => 'shop_order',
+            'payment_method' => 'zelle',
+            'status'         => array_diff( array_keys( wc_get_order_statuses() ), array('wc-checkout-draft', 'wc-failed', 'wc-refunded') ),
+            'date_created'   => '>=' . (time() - MONTH_IN_SECONDS),
+            'limit'          => 200,
+            'page'           => $page++,
+        ) );
+        foreach ( $orders as $order ) {
+            $count_orders['count_all']++;
+            if ( $order->has_status( 'cancelled' ) ) {
+                $count_orders['count_canceled']++;
+                $count_orders['amount_canceled'] += (float) $order->get_total();
+            } else {
+                $count_orders['amount'] += (float) $order->get_total();
+            }
+            if ( $order->is_paid() ) {
+                $created = $order->get_date_created();
+                $paid = $order->get_date_paid();
+                // How long the customer waited between placing the order and it being marked paid
+                if ( $created && $paid ) {
+                    $count_orders['count_paid']++;
+                    $count_orders['wait_seconds'] += max( 0, $paid->getTimestamp() - $created->getTimestamp() );
+                }
+            }
+        }
+    } while ( count( $orders ) === 200 );
+    $count_orders['amount'] = wc_format_decimal( $count_orders['amount'], 2 );
+    $count_orders['amount_canceled'] = wc_format_decimal( $count_orders['amount_canceled'], 2 );
+    set_transient( 'wc_zelle_count_orders', $count_orders, 3 * DAY_IN_SECONDS );
+    return $count_orders;
+}
+
+require_once WCZELLE_PLUGIN_DIR . 'includes/admin/orders-notice.php';
 function wc_zelle_email_receipts_menu_page() {
     require_once WCZELLE_PLUGIN_DIR . 'includes/admin/email-receipts.php';
 }

@@ -21,7 +21,7 @@
 		},
 		{
 			"step": "runPHP",
-			"code": "<?php require_once 'wordpress/wp-load.php'; update_option( 'woocommerce_zelle_settings', array( 'enabled' => 'yes', 'ReceiverZELLENo' => '+1234567890', 'ReceiverZelleOwner' => 'Business Inc', 'ReceiverZELLEEmail' => 'yourzelle@example.com' ) ); ?>"
+			"code": "<?php require_once 'wordpress/wp-load.php'; update_option( 'woocommerce_zelle_settings', array( 'enabled' => 'yes', 'ReceiverZELLENo' => '+1234567890', 'ReceiverZelleOwner' => 'Business Inc', 'ReceiverZELLEEmail' => 'yourzelle@example.com', 'ReceiverZelleTag' => 'business-inc' ) ); ?>"
 		}
 	]
 }
