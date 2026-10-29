@@ -96,6 +96,7 @@ if ( is_checkout() ) {
         wp_localize_script( 'wc_zelle_checkout_popup', 'wc_zelle_popup', array(
             'gateway'  => $this->id,
             'checkout' => WC_AJAX::get_endpoint( 'checkout' ),
+            'confirm'  => WC_AJAX::get_endpoint( 'wc_zelle_confirm_order' ),
             'i18n'     => array(
                 'confirm_required' => esc_html__( 'Please confirm that you have sent the payment.', WCZELLE_PLUGIN_TEXT_DOMAIN ),
             ),

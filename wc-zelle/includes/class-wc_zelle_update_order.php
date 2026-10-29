@@ -14,8 +14,10 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
       register_post_type( "{$this->id}-receipts",
         array(
           'labels' => array(
-            "name" => __( "{$this->method_title} Receipts", WCZELLE_PLUGIN_TEXT_DOMAIN ),
-            "singular_name" => __( "{$this->method_title} Receipt", WCZELLE_PLUGIN_TEXT_DOMAIN ),
+            /* translators: %s: payment method title */
+            "name" => sprintf( __( '%s Receipts', WCZELLE_PLUGIN_TEXT_DOMAIN ), $this->method_title ),
+            /* translators: %s: payment method title */
+            "singular_name" => sprintf( __( '%s Receipt', WCZELLE_PLUGIN_TEXT_DOMAIN ), $this->method_title ),
           ),
           'public' => false,
           'show_ui' => true,
@@ -179,9 +181,10 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
   /**
    * The order from the order number is not the ID under sequential order number plugins
    * @param string|int $number Order number from the payment memo.
-   * @return WC_Order|null
+   * @param float|null $amount Amount paid, to pick between orders sharing the number.
+   * @return WC_Order|null Null when no Zelle order, or more than one, fits
    */
-  function wc_zelle_order_from_number( $number ) {
+  function wc_zelle_order_from_number( $number, $amount = null ) {
     $number = ltrim( trim( (string) $number ), '#' );
     if ( '' === $number ) { return null; }
 
@@ -190,19 +193,33 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     if ( $order instanceof WC_Order ) { return $order; }
 
     // _order_number, used by sequential order number plugins. HPOS takes a meta_query; the classic store ignores one, so it gets a query var wc_zelle_order_number_query() maps
-    $args = array( 'limit' => 1, 'return' => 'ids' );
+    $args = array( 'return' => 'ids', 'payment_method' => $this->id, 'limit' => 5 );
     if ( class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' ) && \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled() ) {
       $args['meta_query'] = array( array( 'key' => '_order_number', 'value' => $number ) );
     } else { $args['wc_zelle_order_number'] = $number; }
-    $found = wc_get_orders( $args );
-    $order = ! empty($found) ? wc_get_order( $found[0] ) : null;
-    if ( $order instanceof WC_Order && (string) $order->get_order_number() === $number ) { return $order; }
+    $ids = wc_get_orders( $args );
 
-    // Otherwise the number is the ID, but only if the order agrees that it is its number
-    $order = ctype_digit( $number ) ? wc_get_order( absint( $number ) ) : null;
-    if ( $order instanceof WC_Order && (string) $order->get_order_number() === $number ) { return $order; }
+    // Or the number is the ID, but only if the order agrees that it is its number
+    if ( ctype_digit( $number ) ) { $ids[] = absint( $number ); }
 
-    return null;
+    // Every Zelle order that really carries this number, once each
+    $candidates = array();
+    foreach ( array_unique( array_map( 'absint', $ids ) ) as $id ) {
+      $order = wc_get_order( $id );
+      if ( $order instanceof WC_Order && $this->id === $order->get_payment_method() && (string) $order->get_order_number() === $number ) {
+        $candidates[ $id ] = $order;
+      }
+    }
+
+    // Several orders share the number: only the one with the amount paid, and none if that is still ambiguous
+    if ( count( $candidates ) > 1 ) {
+      $this->wcz_log( "Order number $number is on " . count( $candidates ) . ' Zelle orders: ' . implode( ', ', array_keys( $candidates ) ), 'warning' );
+      $candidates = null === $amount ? array() : array_filter( $candidates, function ( $order ) use ( $amount ) {
+        return round( (float) $order->get_total(), 2 ) === round( (float) $amount, 2 );
+      } );
+    }
+
+    return 1 === count( $candidates ) ? reset( $candidates ) : null;
   }
 
   function wc_zelle_find_zelle_order( $money, $amount, $order_id = null, $accountid = null, $email_subject = null, $receipt_post_id = null ) {
@@ -210,40 +227,58 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     $post_title = null;
     $post_content = null;
     if (!empty($order_id)) {
-      $order = $this->wc_zelle_order_from_number( $order_id );
+      $order = $this->wc_zelle_order_from_number( $order_id, $amount );
       if ( ! $order instanceof WC_Order || $this->id !== $order->get_payment_method() ) { $order = array(); }
       $order_id = !empty($order) ? $order->get_id() : $order_id;
       $post_title = "Receipt: $money from $accountid for $order_id";
       $post_content .= "$money from $accountid for $order_id.";
     }
 
-    if (empty($order)) {
+    // Settings > How emailreceipts.io payments are matched to orders
+    $matching = (string) $this->emailreceipts_order_matching;
+
+    if ( empty($order) && 'order_number' === $matching ) {
+      $post_title = "Receipt: $money from $accountid, no order matched the order number";
+      $post_content .= "No order matched the order number in the payment memo. Order matching is set to order number only, so no order was looked up by amount.\n";
+    } elseif (empty($order)) {
       // 'orderby' => '<' . ( time() - 3600 ), 'fields' => 'ids' // ordered before the last hour
       // $orders = wc_get_orders( ['limit' => 5, 'payment_method' => $this->id, 'orderby' => time() - 3600, 'status' => array('wc-on-hold')] );
       // $orders = wc_get_orders( ['limit' => 5, 'payment_method' => $this->id, 'orderby' => 'date', 'order' => 'DESC', 'date_created' => '>' . ( time() - 3600 ), 'status' => array('wc-on-hold')] );
-      $orders = wc_get_orders( ["limit" => 5, "payment_method" => $this->id, "orderby" => "date", "order" => "DESC", "status" => array("wc-on-hold")] );
-      // print_r($orders);
-      $ordercountmsg = count($orders) . " recent order(s) match(es) your criteria: payment_method: {$this->id}, ordered in the last hour, status: on-hold\n";
+      // No usable order number: on-hold orders placed in the last hour, then popup orders still pending that were active in the last 30 minutes
+      $orders = array(
+        'on-hold' => wc_get_orders( ["limit" => 10, "payment_method" => $this->id, "orderby" => "date", "order" => "DESC", "status" => array("wc-on-hold"), "date_created" => ">" . ( time() - HOUR_IN_SECONDS )] ),
+        'pending' => wc_get_orders( ["limit" => 10, "payment_method" => $this->id, "orderby" => "modified", "order" => "DESC", "status" => array("wc-pending"), "date_modified" => ">" . ( time() - 30 * MINUTE_IN_SECONDS )] ),
+      );
+      $ordercountmsg = count($orders['on-hold']) . " on-hold order(s) placed in the last hour and " . count($orders['pending']) . " pending order(s) active in the last 30 minutes match(es) your criteria: payment_method: {$this->id}\n";
       $post_content .= $ordercountmsg;
-      if (count($orders) > 0) {
-        $found_order = false;
-        $orderind = 0;
-        while ($orderind < count($orders) && $found_order == false) {
-          $order = $orders[$orderind];
-          $orderid = wp_kses_post($order->get_id());
-          $orderamount = wp_kses_post(floatval($order->get_total()));
-          $post_content .= "Recent order $orderid: $orderamount vs provided: $amount.\n";
-          if ( $amount == $orderamount ) {
-            $post_title = "Receipt: $money from $accountid for $order_id (extracted from recent Zelle order)";
-            $post_content .= "$money from $accountid for $order_id.";
-            $order_id = !empty($order) ? $orderid : $order_id;
-            $found_order = true;
-            $post_content .= "Recent {$this->method_title} order $order_id with accountid: $accountid matched amount $amount == $orderamount\n";
-          } else {
-            $order = array();
-            // $order_id = null;
+      if ( $orders['on-hold'] || $orders['pending'] ) {
+        // single_amount: only when exactly one recent order has this amount; newest_amount: the newest of them
+        $matches = array( 'on-hold' => array(), 'pending' => array() );
+        foreach ( $orders as $status => $recent_orders ) {
+          foreach ( $recent_orders as $recent ) {
+            $orderamount = wp_kses_post(floatval($recent->get_total()));
+            $post_content .= "Recent order " . $recent->get_id() . " (" . $recent->get_status() . "): $orderamount vs provided: $amount.\n";
+            // Pending: checkout orders only (popup still open), never admin, API or renewal orders
+            if ( $amount == $orderamount && ( 'on-hold' === $status || in_array( $recent->get_created_via(), array( 'checkout', 'store-api' ), true ) ) ) {
+              $matches[ $status ][] = $recent;
+            }
           }
-          $orderind++;
+        }
+        // On-hold first: pending orders are only matched when no on-hold order has this amount
+        $matches = $matches['on-hold'] ? $matches['on-hold'] : $matches['pending'];
+        if ( 1 === count($matches) || ( 'newest_amount' === $matching && count($matches) > 1 ) ) {
+          $order = $matches[0];
+          $order_id = $order->get_id();
+          $post_title = "Receipt: $money from $accountid for $order_id (extracted from recent Zelle order)";
+          $post_content .= "$money from $accountid for $order_id.";
+          $post_content .= 1 === count($matches)
+            ? "Recent {$this->method_title} order $order_id with accountid: $accountid was the only one matching amount $amount\n"
+            : "Recent {$this->method_title} order $order_id with accountid: $accountid is the newest of " . count($matches) . " orders matching amount $amount\n";
+        } else {
+          $order = array();
+          $match_ids = implode( ', ', array_map( function ( $match ) { return $match->get_id(); }, $matches ) );
+          $post_title = count($matches) > 1 ? "Receipt: $money matches " . count($matches) . " recent orders, none activated" : "Receipt: No recent order matched the amount: $amount";
+          $post_content .= count($matches) > 1 ? "Recent orders $match_ids all match amount $amount, so none was activated. Match this payment manually.\n" : "No recent on-hold or pending order matched amount $amount.\n";
         }
       } else {
           $post_title = "Receipt: No valid orders matched the amount: $amount";

@@ -1,7 +1,7 @@
 // wc_zelle_popup // wp_localize_script object
 //
-// Checkout design 1: on Place order, posts the checkout with wc_zelle_draft=1 so WooCommerce creates the draft order, then shows its number and the Zelle details in a popup.
-// Confirming submits the checkout normally and WooCommerce resumes that same order. @see WC_Zelle_Draft_Order
+// Checkout design 1: on Place order, posts the checkout with wc_zelle_popup=1 so WooCommerce creates the popup order, then shows its number and the Zelle details in a popup.
+// Confirming sends the customer to that same order's confirmation page, without a second checkout submit. @see WC_Zelle_Popup_Order
 
 jQuery(function ($) {
 	"use strict";
@@ -14,6 +14,11 @@ jQuery(function ($) {
 
 	// Set while the confirmed checkout is submitted, so the popup lets it through
 	var submitting = false;
+
+	// From the pending order's response, for the confirm request
+	var confirmNonce = "";
+	var confirmOrderId = 0;
+	var confirmOrderKey = "";
 
 	function getForm() {
 		return $("form.checkout").first();
@@ -52,6 +57,20 @@ jQuery(function ($) {
 		}
 	}
 
+	// Same repair as WooCommerce's checkout.js, for PHP notices printed ahead of the JSON
+	function jsonFilter(raw, type) {
+		if ("json" !== type) {
+			return raw;
+		}
+		try {
+			JSON.parse(raw);
+			return raw;
+		} catch (err) {
+			var json = raw.match(/{"result.*}/);
+			return json ? json[0] : raw;
+		}
+	}
+
 	function showError($popup, message) {
 		$popup
 			.find(".wcz-popup-error")
@@ -63,6 +82,9 @@ jQuery(function ($) {
 
 	function fillPopup($popup, order) {
 		$popup.find("[data-wcz-order-number]").text(order.number || "");
+		if (order.total) {
+			$popup.find("[data-wcz-order-total]").html(order.total);
+		}
 	}
 
 	function getConfirmed($popup) {
@@ -99,7 +121,7 @@ jQuery(function ($) {
 
 	/* The pending order behind the popup */
 
-	function requestDraftOrder() {
+	function requestPopupOrder() {
 		var $form = getForm();
 		var url = checkoutUrl();
 
@@ -112,8 +134,9 @@ jQuery(function ($) {
 		$.ajax({
 			type: "POST",
 			url: url,
-			data: $form.serialize() + "&wc_zelle_draft=1",
+			data: $form.serialize() + "&wc_zelle_popup=1",
 			dataType: "json",
+			dataFilter: jsonFilter,
 		})
 			.done(function (result) {
 				// Placed outright (e.g. a cached page after the popup was turned off): submitting again would hit an emptied cart
@@ -122,13 +145,23 @@ jQuery(function ($) {
 					return;
 				}
 
-				if (!result || "zelle_draft" !== result.result) {
+				if (!result || "zelle_popup" !== result.result) {
 					// Validation errors, an expired session, anything else: hand it
 					// back to WooCommerce so it reports it the way it always does
 					return placeOrder();
 				}
 
 				var $popup = getPopup();
+				confirmNonce = result.nonce || "";
+				confirmOrderId = result.order_id || 0;
+				confirmOrderKey = result.order_key || "";
+
+				// An account created by this request voided the page's checkout nonce
+				if (result.checkout_nonce) {
+					$form
+						.find("input[name='woocommerce-process-checkout-nonce']")
+						.val(result.checkout_nonce);
+				}
 
 				try {
 					fillPopup($popup, result);
@@ -154,8 +187,41 @@ jQuery(function ($) {
 			});
 	}
 
-	// Submit the checkout the ordinary way. WooCommerce resumes the pending order
-	// created above rather than opening a second one
+	// The pending order is the order: it is confirmed and the customer sent to its confirmation page
+	function confirmOrder(retried) {
+		if (!settings.confirm || !confirmNonce) {
+			return placeOrder();
+		}
+
+		$.ajax({
+			type: "POST",
+			url: settings.confirm,
+			data: {
+				security: confirmNonce,
+				order_id: confirmOrderId,
+				order_key: confirmOrderKey,
+			},
+			dataType: "json",
+			dataFilter: jsonFilter,
+		})
+			.done(function (result) {
+				if (result && "success" === result.result && result.redirect) {
+					window.location = result.redirect;
+					return;
+				}
+				placeOrder();
+			})
+			.fail(function () {
+				// It may have gone through with only its response lost, and asking again returns that order
+				if (!retried) {
+					return confirmOrder(true);
+				}
+				placeOrder();
+			});
+	}
+
+	// Submit the checkout the ordinary way, the fallback when confirming fails. WooCommerce
+	// resumes the pending order created above rather than opening a second one
 	function placeOrder() {
 		submitting = true;
 		getForm().trigger("submit");
@@ -178,7 +244,7 @@ jQuery(function ($) {
 				}
 
 				try {
-					requestDraftOrder();
+					requestPopupOrder();
 				} catch (err) {
 					// Not returning false hands the checkout back to WooCommerce
 					unblock(getForm());
@@ -228,8 +294,11 @@ jQuery(function ($) {
 			return;
 		}
 
+		if ($button.hasClass("wcz-busy")) {
+			return;
+		}
 		$button.addClass("wcz-busy");
-		placeOrder();
+		confirmOrder();
 	});
 
 	// Ticking it answers the complaint, so take the complaint back down
@@ -246,7 +315,7 @@ jQuery(function ($) {
 		hidePopup();
 	});
 
-	// The payment box is rebuilt on every refresh; the draft order is kept and updated to the new cart on the next open
+	// The payment box is rebuilt on every refresh; the popup order is kept and updated to the new cart on the next open
 	$(document.body).on("updated_checkout", function () {
 		if (!isPopupOpen()) {
 			hidePopup();

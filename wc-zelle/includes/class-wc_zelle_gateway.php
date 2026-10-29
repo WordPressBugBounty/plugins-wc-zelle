@@ -25,6 +25,8 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
 
         public $ZelleReceiverAccounts;
 
+        public $emailreceipts_order_matching;
+
         public $ZelleStockManagement;
 
         public $checkout_description;
@@ -40,8 +42,6 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
         public $enableNote;
 
         public $order_note;
-
-        public $disableMenu;
 
         public $processOrder;
 
@@ -72,8 +72,8 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
             // PRO pitch, printed above this gateway's settings form
             $this->method_description .= '<div style="background:#fff; border:1px solid #dcdcde; border-left:4px solid #7f54b3; border-radius:2px; padding:16px 20px; margin-top:12px; max-width:700px;">' . '<h3 style="margin-top:0;">Get Zelle PRO</h3>' . '<p>The settings below are locked to the free plan\'s defaults. Upgrade to unlock:</p>' . '<ul style="list-style:disc; margin-left:20px;">' . '<li><strong>A popup checkout</strong>, just like modern gateways - the customer clicks <strong>Place order</strong>, gets their order number and Zelle details in a popup, and confirms once they have paid</li>' . '<li><strong>QR code and a Pay with Zelle button</strong> customers can scan or tap straight from checkout</li>' . '<li><strong><a href="' . esc_url( admin_url( 'admin.php?page=wc_zelle_automated_status' ) ) . '">Automatic order updates</a></strong> via emailreceipts.io - orders move from on-hold to processing on their own the moment payment is detected, no more digging through your bank for a matching payment</li>' . '<li>Import your synced emailreceipts.io accounts straight into the Receiver Zelle fields</li>' . '<li>Custom text for the checkout notice, the thank you page and the store instructions your customers see</li>' . '<li>Choose exactly when stock is reduced, and whether orders process automatically or wait on-hold</li>' . '<li>Debug logging when something needs troubleshooting</li>' . '</ul>' . '<p><a href="' . esc_url( $upgrade_url ) . '" target="_blank" style="display:inline-block; background:#7f54b3; color:#fff; text-decoration:none; padding:8px 18px; border-radius:3px; font-weight:600;">Upgrade to PRO</a></p>' . '</div>';
             $this->init_settings();
-            $this->enabled = $this->get_option( 'enabled' );
-            $this->title = ( $this->get_option( 'checkout_title' ) ? $this->get_option( 'checkout_title' ) : $this->method_title );
+            $this->enabled = $this->get_option( 'enabled', 'no' );
+            $this->title = $this->get_option( 'checkout_title', 'Zelle' );
             $this->ReceiverZelleTag = $this->get_option( 'ReceiverZelleTag' );
             $this->ReceiverZELLENo = $this->get_option( 'ReceiverZELLENo' );
             $this->ReceiverZELLEEmail = $this->get_option( 'ReceiverZELLEEmail' );
@@ -82,20 +82,20 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
             // In memory only, for the read only settings field: saving it here wrote to the database whenever the site URL varied (e.g. per language)
             $this->settings['ZelleForwardingURL'] = $this->ZelleForwardingURL;
             $this->ZelleReceiverAccounts = $this->get_option( 'ZelleReceiverAccounts' );
-            $this->ZelleStockManagement = $this->get_option( 'ZelleStockManagement' );
+            $this->emailreceipts_order_matching = $this->get_option( 'emailreceipts_order_matching', 'single_amount' );
+            $this->ZelleStockManagement = $this->get_option( 'ZelleStockManagement', 'no' );
             $this->checkout_description = $this->get_option( 'checkout_description' );
             $this->zelle_notice = $this->get_option( 'zelle_notice' );
             $this->store_instructions = $this->get_option( 'store_instructions' );
-            $this->display_zelle = $this->get_option( 'display_zelle' );
+            $this->display_zelle = $this->get_option( 'display_zelle', '2' );
             $this->ZelleQRCode = $this->get_option( 'ZelleQRCode' );
-            $this->enableNote = $this->get_option( 'enableNote' );
+            $this->enableNote = $this->get_option( 'enableNote', 'yes' );
             $this->order_note = $this->get_option( 'order_note' );
-            $this->disableMenu = $this->get_option( 'disableMenu' ) ?? 'no';
-            $this->processOrder = $this->get_option( 'processOrder' ) ?? 'no';
-            $this->enable_debug = $this->get_option( 'enable_debug' );
-            $this->toggleSupport = $this->get_option( 'toggleSupport' );
-            $this->toggleTutorial = $this->get_option( 'toggleTutorial' );
-            $this->toggleCredits = $this->get_option( 'toggleCredits' );
+            $this->processOrder = $this->get_option( 'processOrder', 'no' );
+            $this->enable_debug = $this->get_option( 'enable_debug', 'no' );
+            $this->toggleSupport = $this->get_option( 'toggleSupport', 'no' );
+            $this->toggleTutorial = $this->get_option( 'toggleTutorial', 'no' );
+            $this->toggleCredits = $this->get_option( 'toggleCredits', 'no' );
             // upgrade display_zelle
             $this->wc_zelle_upgrade_display_zelle();
             // Method with all the options fields
@@ -167,26 +167,26 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
             // Financial accounts emailreceipts.io synced to this store
             $receiver_accounts = $this->wc_zelle_emrcpts_accounts_options();
             $this->form_fields = array(
-                'enabled'               => array(
+                'enabled'                      => array(
                     'title'   => 'Enable ZELLE',
                     'label'   => 'Check to Enable / Uncheck to Disable',
                     'type'    => 'checkbox',
                     'default' => 'no',
                 ),
-                'checkout_title'        => array(
+                'checkout_title'               => array(
                     'title'       => 'Checkout Title',
                     'type'        => 'text',
                     'description' => 'This is the title which the user sees on the checkout page.',
                     'default'     => 'Zelle',
                     'placeholder' => 'Zelle',
                 ),
-                'display_zelle'         => array(
+                'display_zelle'                => array(
                     'title'       => 'Checkout page design templates' . $improved . $pro,
                     'label'       => 'Choose how you want customers to see the Zelle info on checkout' . $edit_with_pro,
                     'type'        => 'select',
                     'description' => 'Choose how you want customers to see the Zelle info on checkout.
 					<p><strong>PRO designs</strong> are enhanced with extra features such as <strong>copy to clipboard</strong>, <strong>QR code</strong>, <strong>Zelle button/link</strong>, etc to help autofill info when moving to Zelle.</p>
-					<p><strong>Design 1:</strong> keeps the Zelle info off the checkout page and shows it in a popup once the customer clicks <strong>Place order</strong>, the way modern payment methods do. Your <em>Checkout Page Notice</em> below is shown in that popup. The order is created as <strong>pending payment</strong> first so the popup can show its order number for the Zelle memo, and it is only confirmed once the customer confirms in the popup. Closing the popup keeps that pending order, so reopening it shows the same order number, and it is removed if the customer places the order with a different payment method instead. The Zelle info is still shown on the order confirmation page, which is where customers go if their browser cannot open the popup.</p>
+					<p><strong>Design 1:</strong> keeps the Zelle info off the checkout page and shows it in a popup once the customer clicks <strong>Place order</strong>, the way modern payment methods do. Your <em>Checkout Page Notice</em> below is shown in that popup. The order is created as <strong>pending payment</strong> first so the popup can show its order number for the Zelle memo, and it is only confirmed once the customer confirms in the popup. Closing the popup keeps that pending order, so reopening it shows the same order number, and it is released but not deleted if the customer places the order with a different payment method instead. The Zelle info is still shown on the order confirmation page, which is where customers go if their browser cannot open the popup.</p>
 					<p><strong>Design 2:</strong> shows the Zelle info on checkout in full width columns.</p>
 					<p><strong>Design 3:</strong> shows the Zelle info on checkout in half width columns.</p>' . (( zelle_fs()->is_plan__premium_only( 'pro' ) ? '' : '<p>Designs 1 and 3 need an active PRO licence. Without one this store uses design 2, so the checkout always carries the full Zelle info.</p>' )) . $edit_with_pro,
                     'default'     => '2',
@@ -196,7 +196,7 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
                         '3' => '3: show the Zelle info on checkout (half width columns)' . $edit_with_pro,
                     ),
                 ),
-                'ReceiverZelleTag'      => array(
+                'ReceiverZelleTag'             => array(
                     'title'             => "Receiver Zelle Tag" . $new,
                     'type'              => 'text',
                     'description'       => 'This is the Zelle Tag (the custom handle you can claim in your Zelle/Bank mobile app) associated with your store Zelle/Bank account. Customers can send money to this tag without needing your email or phone number.
@@ -205,33 +205,32 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
                         'maxlength' => 50,
                     ),
                 ),
-                'ReceiverZELLENo'       => array(
+                'ReceiverZELLENo'              => array(
                     'title'       => 'Receiver Zelle No',
                     'type'        => 'text',
                     'description' => 'This is the phone number associated with your store Zelle/Bank account or your receiving Zelle/Bank account. Customers will send money to this number',
                     'placeholder' => "+1234567890",
                 ),
-                'ReceiverZELLEEmail'    => array(
+                'ReceiverZELLEEmail'           => array(
                     'title'       => "Receiver Zelle Owner's Email",
                     'type'        => 'text',
                     'description' => 'This is the email associated with your store Zelle/Bank account or your receiving Zelle/Bank account. Customers will send money to this email',
-                    'default'     => "@gmail.com",
                     'placeholder' => "email@website.com",
                 ),
-                'ReceiverZelleOwner'    => array(
+                'ReceiverZelleOwner'           => array(
                     'title'       => "Receiver Zelle Owner's Name",
                     'type'        => 'text',
                     'description' => 'This is the name associated with your store Zelle/Bank account. Customers will send money to this Zelle/Bank account name',
                     'placeholder' => 'Jane D',
                 ),
-                'ZelleQRCode'           => array(
+                'ZelleQRCode'                  => array(
                     'title'       => 'Your Zelle QR code URL on the checkout page and the thank you page' . $improved . $pro,
                     'label'       => 'Fill this in to show the QR code and the Pay with Zelle button. Leave it empty to show neither' . $edit_with_pro,
                     'type'        => 'text',
                     'description' => 'Input your <strong>https://enroll.zellepay.com/qr-codes?data=***</strong> Zelle QR code URL.' . "<br>To get it, scan the Zelle QR code you get from your Zelle/Bank app with your camera app and extract the URL it redirects to in your browser.<br>It should have this format: https://enroll.zellepay.com/qr-codes?data=***" . '<br>Otherwise <a href="' . admin_url( '/media-new.php' ) . '" target="_blank">Upload your Zelle QR code</a> to your media uploads then <br>copy and input the uploaded ' . wp_upload_dir()['baseurl'] . '/*** URL' . $edit_with_pro . (( $qr_code_url ? '<br><p>Preview below what your customers will see. <a href="mailto:info@theafricanboss.com?cc=' . '%0A' . get_bloginfo( 'admin_email' ) . '&subject=Invalid%20Zelle%20QR%20code&body=Please%20help!%0A%0AMy%20Zelle%20QR%20code%20is%20invalid.%0A%0AZelle%20link%3A%20' . urlencode( $payment_url ) . '%0A%0A' . $this->ReceiverZelleOwner . '%0A' . get_bloginfo( 'name' ) . '%0A' . get_bloginfo( 'url' ) . '">If the QR code is invalid, click here for help!</a></p><br>' . $qr_code : '' )),
                     'placeholder' => 'https://enroll.zellepay.com/qr-codes?data=***',
                 ),
-                'ZelleForwardingURL'    => array(
+                'ZelleForwardingURL'           => array(
                     'title'       => 'Connect your Email Receipts via emailreceipts.io' . $emrcpts,
                     'type'        => 'text',
                     'description' => 'This is the URL that will be exported to emailreceipts.io while setting up' . $emrcpts,
@@ -240,55 +239,67 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
                     'css'         => 'width:80%; pointer-events: none;',
                     'class'       => 'disabled',
                 ),
-                'ZelleReceiverAccounts' => array(
+                'ZelleReceiverAccounts'        => array(
                     'title'       => 'Receiver Accounts from emailreceipts.io' . $newFeature . $pro,
                     'label'       => 'Import the Zelle accounts registered at emailreceipts.io' . $edit_with_pro,
                     'type'        => 'select',
                     'description' => 'The Zelle accounts registered at emailreceipts.io for this store. Pick one and <strong>Save changes</strong> to copy its tag, email and phone number into the Receiver Zelle fields above.
 					<p>Nothing is copied automatically: leave this on <em>Do not import</em> and type your own details above instead if you would rather not import your accounts from emailreceipts.io</p>
 					<p>The <strong>list is synced</strong> with emailreceipts.io when you <strong>connect a financial account</strong> or when you <strong>sync existing accounts</strong> at' . $emrcpts . '</p>' . $edit_with_pro,
-                    'default'     => '',
                     'options'     => $receiver_accounts,
                 ),
-                'checkout_description'  => array(
+                'emailreceipts_order_matching' => array(
+                    'title'       => 'How emailreceipts.io payments are matched to orders' . $newFeature . $pro,
+                    'type'        => 'select',
+                    'description' => 'When emailreceipts.io reports a Zelle payment, the order number in the payment memo is always tried first, and that order is only marked paid if its amount matches and it is not already paid.
+					<p>This setting decides what happens when the memo has no usable order number. The latest 10 on-hold Zelle orders placed in the last hour are checked first. Only if none of them has the amount are checkout popup orders still pending payment checked, those active in the last 30 minutes. Cancelled and popup orders never are.</p>
+					<p>Payments that do not match an order are kept under <a href="' . esc_url( admin_url( 'edit.php?post_type=zelle-receipts' ) ) . '">Zelle Receipts</a> for you to match by hand.</p>' . $edit_with_pro,
+                    'default'     => 'single_amount',
+                    'options'     => array(
+                        'order_number'  => 'Match by order number and amount (strictest): never mark an order paid without a matching order number + amount' . $edit_with_pro,
+                        'single_amount' => 'Match by the only matching amount (recommended): without an order number to match, mark paid the only one recent unpaid order with that amount, and none if several recent unpaid orders with the same amount share it',
+                        'newest_amount' => 'Match by the newest matching amount: without an order number to match, mark paid the most recent unpaid order with that amount, even if others share it' . $edit_with_pro,
+                    ),
+                ),
+                'checkout_description'         => array(
                     'title'       => 'Checkout Page Notice' . $pro,
                     'type'        => 'textarea',
                     'description' => "This is the text a customer sees in the payment gateway box on the checkout page.{$edit_with_pro}<br>Default:<br>{$default_checkout_description}",
                     'default'     => $default_checkout_description,
                 ),
-                'zelle_notice'          => array(
+                'zelle_notice'                 => array(
                     'title'       => 'Thank You Notice' . $pro,
                     'type'        => 'textarea',
                     'description' => "This is the text a customer sees on the thank you/order confirmation page after placing an order.{$edit_with_pro}<br>Default:<br>{$default_zelle_notice}",
                     'default'     => $default_zelle_notice,
                 ),
-                'store_instructions'    => array(
+                'store_instructions'           => array(
                     'title'       => 'Store Instructions' . $pro,
                     'type'        => 'textarea',
                     'description' => "Store Instructions that will be added to the thank you page and emails.{$edit_with_pro}<br>Default:<br>{$default_store_instructions}",
                     'default'     => $default_store_instructions,
                 ),
-                'enableNote'            => array(
+                'enableNote'                   => array(
                     'title'       => 'Enable/Disable adding a note to orders' . $pro,
                     'label'       => 'Check to enable sending note / Uncheck to disable sending note' . $edit_with_pro,
                     'type'        => 'checkbox',
                     'description' => 'A note will be added to your order and an email about that note will be sent to your email',
                     'default'     => 'yes',
                 ),
-                'order_note'            => array(
+                'order_note'                   => array(
                     'title'       => 'Admin Order Note',
                     'type'        => 'textarea',
                     'description' => 'This is a note added to the order email. You may use available shortcodes as needed like in this default order note below:' . $edit_with_pro . '<br>' . $default_order_note,
                     'default'     => $default_order_note,
                 ),
-                'ZelleStockManagement'  => array(
+                'ZelleStockManagement'         => array(
                     'title'       => 'Reduce Stock ONLY after payment receipt' . $pro,
                     'label'       => 'Uncheck to reduce stock when order goes on-hold / Check to reduce stock when order goes to processing' . $edit_with_pro,
                     'type'        => 'checkbox',
                     'description' => 'If you want to reduce stock once payment is received, check this box.' . '<p>While unchecked, stock is reduced as soon as the order goes on-hold, and WooCommerce\'s own <strong>Hold stock (minutes)</strong> setting decides how long that reserved stock is held before the order is automatically cancelled and the stock released.<br>' . '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=products&section=inventory' ) ) . '" target="_blank">Edit Hold stock (minutes) in WooCommerce &rsaquo; Settings &rsaquo; Products &rsaquo; Inventory</a></p>',
                     'default'     => 'no',
                 ),
-                'processOrder'          => array(
+                'processOrder'                 => array(
                     'title'       => 'Enable/Disable processing orders automatically' . $pro,
                     'label'       => 'Check to enable processing orders / Uncheck to disable processing orders' . $edit_with_pro,
                     'type'        => 'checkbox',
@@ -296,28 +307,28 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
 						<p>When unchecked, orders will be put on-hold until you manually process them or use emailreceipts.io to auto-process them</p>',
                     'default'     => 'no',
                 ),
-                'enable_debug'          => array(
+                'enable_debug'                 => array(
                     'title'       => 'Enable Debug' . $pro,
                     'label'       => 'Check to Enable / Uncheck to Disable' . $edit_with_pro,
                     'type'        => 'checkbox',
                     'description' => 'This will enable debug mode to help you troubleshoot issues. <a href="' . admin_url( 'admin.php?page=wc-status&tab=logs' ) . '" target="_blank">Access Logs here</a>',
                     'default'     => 'no',
                 ),
-                'toggleSupport'         => array(
+                'toggleSupport'                => array(
                     'title'       => 'Enable Support message',
                     'label'       => 'Check to Enable / Uncheck to Disable',
                     'type'        => 'checkbox',
                     'description' => 'Help your customers checkout with ease by letting them know how to contact you',
                     'default'     => 'yes',
                 ),
-                'toggleTutorial'        => array(
+                'toggleTutorial'               => array(
                     'title'       => 'Enable Tutorial to display 1min video link',
                     'label'       => 'Check to Enable / Uncheck to Disable',
                     'type'        => 'checkbox',
                     'description' => 'Help your customers checkout with ease by showing this tutorial link',
                     'default'     => 'no',
                 ),
-                'toggleCredits'         => array(
+                'toggleCredits'                => array(
                     'title'       => 'Enable Credits to display Powered by The African Boss',
                     'label'       => 'Check to Enable / Uncheck to Disable',
                     'type'        => 'checkbox',
@@ -327,17 +338,18 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
             );
             // PRO settings, read only on the free plan (their behaviour is PRO gated anyway), with any extra css each needs
             $pro_only = array(
-                'display_zelle'         => '',
-                'ZelleQRCode'           => '',
-                'ZelleReceiverAccounts' => '',
-                'checkout_description'  => 'width:80%;',
-                'zelle_notice'          => 'width:80%;',
-                'store_instructions'    => 'width:80%;',
-                'enableNote'            => '',
-                'order_note'            => '',
-                'ZelleStockManagement'  => '',
-                'processOrder'          => '',
-                'enable_debug'          => '',
+                'display_zelle'                => '',
+                'ZelleQRCode'                  => '',
+                'ZelleReceiverAccounts'        => '',
+                'emailreceipts_order_matching' => '',
+                'checkout_description'         => 'width:80%;',
+                'zelle_notice'                 => 'width:80%;',
+                'store_instructions'           => 'width:80%;',
+                'enableNote'                   => '',
+                'order_note'                   => '',
+                'ZelleStockManagement'         => '',
+                'processOrder'                 => '',
+                'enable_debug'                 => '',
             );
             foreach ( $pro_only as $field => $css ) {
                 if ( !isset( $this->form_fields[$field] ) ) {
@@ -417,25 +429,23 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
             }
             // Link the QR code only when there is a payment URL: an empty href looks clickable but goes nowhere
             $has_payment_url = '' !== trim( (string) $payment_url );
-            $link_open = ( $has_payment_url ? '<a class="wcz-qr" href="' . esc_url( $payment_url ) . '" target="_blank">' : '<span class="wcz-qr">' );
-            $link_close = ( $has_payment_url ? '</a>' : '</span>' );
+            /* translators: %s: payment method title */
+            $link_alt = sprintf( __( '%s link', WCZELLE_PLUGIN_TEXT_DOMAIN ), $this->method_title );
             if ( strpos( $payment_url, 'https://enroll.zellepay.com/qr-codes' ) === false ) {
-                $qr_code = '<img width="150" height="150" alt="' . esc_attr( $this->method_title ) . ' link" src="' . esc_attr( $qr_code_url ) . '">';
-                $qr_code = $link_open . $qr_code . $link_close;
-                return wp_kses_post( $qr_code );
+                return wp_kses_post( '<img width="150" height="150" alt="' . esc_attr( $link_alt ) . '" src="' . esc_attr( $qr_code_url ) . '">' );
             }
             if ( $type === "advanced" ) {
-                $qr_code .= $link_open;
                 // $qr_code .= '<p>' . esc_html__( 'If using the Zelle app, scan/click below', WCZELLE_PLUGIN_TEXT_DOMAIN ) . ':</p>';
-                $default_qrcode = '<img width="150" height="150" alt="' . esc_attr( $this->method_title ) . ' QR code" src="' . esc_attr( $qr_code_url ) . '" />';
+                /* translators: %s: payment method title */
+                $default_qrcode = '<img width="150" height="150" alt="' . esc_attr( sprintf( __( '%s QR code', WCZELLE_PLUGIN_TEXT_DOMAIN ), $this->method_title ) ) . '" src="' . esc_attr( $qr_code_url ) . '" />';
                 $qr_code .= '<div id="wc_zelle_qrcode">' . $default_qrcode . '</div>';
-                $qr_code .= $link_close . '<p class="wcz-qr-note">' . esc_html__( 'Scan with your Zelle/Bank app', WCZELLE_PLUGIN_TEXT_DOMAIN ) . (( $has_payment_url ? '<br>' . esc_html__( 'or click the button below', WCZELLE_PLUGIN_TEXT_DOMAIN ) : '' )) . '</p>';
+                $qr_code .= '<p class="wcz-qr-note">' . esc_html__( 'Scan with your Zelle/Bank app', WCZELLE_PLUGIN_TEXT_DOMAIN ) . (( $has_payment_url ? '<br>' . esc_html__( 'or click the button below', WCZELLE_PLUGIN_TEXT_DOMAIN ) : '' )) . '</p>';
                 // Only worth a button when it has somewhere to go
                 if ( $has_payment_url ) {
                     $qr_code .= '<a class="' . esc_attr( wc_zelle_button_class( true, 'wcz-pay-btn' ) ) . '" role="button" href="' . esc_url( $payment_url ) . '" target="_blank" rel="noopener"><img class="wcz-pay-icon" width="24" height="24" alt="" aria-hidden="true" src="' . esc_url( WCZELLE_PLUGIN_DIR_URL . 'assets/images/zelle_35.png' ) . '" /><span class="wcz-pay-label">' . esc_html__( 'Pay with Zelle', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</span></a>';
                 }
             } else {
-                $qr_code = $link_open . '<img width="150" height="150" alt="' . esc_attr( $this->method_title ) . ' link" src="' . esc_attr( $qr_code_url ) . '">' . $link_close;
+                $qr_code = '<img width="150" height="150" alt="' . esc_attr( $link_alt ) . '" src="' . esc_attr( $qr_code_url ) . '">';
                 // // or with local QR code JS, no logo, no button
                 // $qr_code .= '<a href="'. esc_url( $payment_url ) . '" target="_blank">';
                 // // $qr_code .= '<p>' . esc_html__( 'If using the Zelle app, scan/click below', WCZELLE_PLUGIN_TEXT_DOMAIN ) . ':</p>';
@@ -564,7 +574,7 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
          * @param string $level Optional. Default 'info'
          * Possible values: emergency|alert|critical|error|warning|notice|info|debug.
          */
-        protected function wcz_log( $message, $level = 'info' ) {
+        public function wcz_log( $message, $level = 'info' ) {
             // logs at admin.php?page=wc-status&tab=logs
             if ( !empty( $message ) && $this->enable_debug == 'yes' && zelle_fs()->is_plan__premium_only( 'pro' ) ) {
                 $logger = wc_get_logger();
@@ -742,49 +752,39 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
                 wc_add_notice( esc_html( __( 'Please try another payment method', WCZELLE_PLUGIN_TEXT_DOMAIN ) ), 'error' );
                 $this->wcz_log( esc_html( __( 'Checkout: Please try another payment method', WCZELLE_PLUGIN_TEXT_DOMAIN ) ), 'error' );
             }
-            // The popup's draft order is created before the customer sees the popup, so its fields are validated on the confirmed checkout. @see WC_Zelle_Draft_Order
-            if ( $this->wc_zelle_use_popup() && !empty( $_POST['wc_zelle_draft'] ) ) {
-                return;
-            }
-            if ( isset( $_POST['zelle_email'] ) ) {
-                $zelle_email = sanitize_text_field( trim( $_POST['zelle_email'] ) );
-                if ( !$zelle_email || filter_var( $zelle_email, FILTER_VALIDATE_EMAIL ) == false ) {
-                    wc_add_notice( esc_html( __( 'Invalid/Missing Zelle email', WCZELLE_PLUGIN_TEXT_DOMAIN ) ), 'error' );
-                    $this->wcz_log( esc_html( __( 'Checkout: Invalid/Missing Zelle email', WCZELLE_PLUGIN_TEXT_DOMAIN ) ), 'error' );
-                }
-            }
-            if ( isset( $_POST['zelle_no'] ) ) {
-                $zelle_no = sanitize_text_field( trim( $_POST['zelle_no'] ) );
-                if ( !$zelle_no || filter_var( $zelle_no, FILTER_SANITIZE_NUMBER_INT ) == false ) {
-                    wc_add_notice( esc_html( __( 'Invalid/Missing Zelle phone number', WCZELLE_PLUGIN_TEXT_DOMAIN ) ), 'error' );
-                    $this->wcz_log( esc_html( __( 'Checkout: Invalid/Missing Zelle phone number', WCZELLE_PLUGIN_TEXT_DOMAIN ) ), 'error' );
-                }
-            }
         }
 
         // Process Order
         public function process_payment( $order_id ) {
             try {
                 if ( !$order_id ) {
-                    wc_add_notice( '<p>Something went terribly wrong.</p><p>Order information is missing</p>', 'error' );
+                    wc_add_notice( '<p>' . esc_html__( 'Something went terribly wrong.', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</p><p>' . esc_html__( 'Order information is missing', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</p>', 'error' );
                     $this->wcz_log( 'Checkout: Something went terribly wrong. Order information is missing</p>', 'error' );
                     return;
                 }
                 $order = wc_get_order( $order_id );
                 if ( !$order ) {
-                    wc_add_notice( '<p>Something went terribly wrong.</p><p>Order information is missing</p>', 'error' );
+                    wc_add_notice( '<p>' . esc_html__( 'Something went terribly wrong.', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</p><p>' . esc_html__( 'Order information is missing', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</p>', 'error' );
                     $this->wcz_log( 'Checkout: Something went terribly wrong. Order information is missing', 'error' );
                     return;
                 }
                 if ( !is_wp_error( $order ) && $this->id === $order->get_payment_method() ) {
+                    // Already paid or confirmed, e.g. matched by emailreceipts.io while the popup was open: status left alone
+                    if ( !$order->needs_payment() ) {
+                        WC()->cart->empty_cart();
+                        return array(
+                            'result'   => 'success',
+                            'redirect' => $this->get_return_url( $order ),
+                        );
+                    }
                     if ( $this->wc_zelle_holds_stock_on_hold() ) {
                         wc_maybe_reduce_stock_levels( $order_id );
                     }
                     if ( zelle_fs()->is_plan__premium_only( 'pro' ) && $this->processOrder == 'yes' ) {
                         $order->payment_complete();
                     } else {
-                        // Mark as on-hold (we're awaiting the payment).
-                        $order->update_status( apply_filters( 'woocommerce_zelle_process_payment_order_status', 'on-hold', $order ), __( "Waiting for the {$this->method_title} payment", WCZELLE_PLUGIN_TEXT_DOMAIN ) );
+                        /* translators: %s: payment method title */
+                        $order->update_status( apply_filters( 'woocommerce_zelle_process_payment_order_status', 'on-hold', $order ), sprintf( __( 'Waiting for the %s payment', WCZELLE_PLUGIN_TEXT_DOMAIN ), $this->method_title ) );
                     }
                     if ( zelle_fs()->is_plan__premium_only( 'pro' ) && 'yes' == $this->enableNote ) {
                         require_once WCZELLE_PLUGIN_DIR . 'includes/notifications/note.php';
@@ -797,16 +797,14 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
                         'redirect' => $this->get_return_url( $order ),
                     );
                 } else {
-                    wc_add_notice( 'Connection error.', 'error' );
+                    wc_add_notice( esc_html__( 'Connection error.', WCZELLE_PLUGIN_TEXT_DOMAIN ), 'error' );
                     $this->wcz_log( 'Checkout: Connection error.', 'error' );
                     return;
                 }
             } catch ( \Throwable $th ) {
                 // The exception goes to the log only: as a string it carries the stack trace and server paths
                 wc_add_notice( esc_html__( 'Something went wrong. Please try again or choose another payment method.', WCZELLE_PLUGIN_TEXT_DOMAIN ), 'error' );
-                wc_get_logger()->error( "Checkout: Something went wrong. {$th}", array(
-                    'source' => $this->id,
-                ) );
+                $this->wcz_log( "Checkout: Something went wrong. {$th}", 'error' );
                 return;
             }
         }
@@ -866,15 +864,18 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
                     if ( !$order instanceof WC_Order || $order->get_payment_method() !== $this->id ) {
                         continue;
                     }
+                    // Unpaid only: never a paid order put back on-hold, by the merchant or by a confirm racing emailreceipts.io
+                    if ( $order->is_paid() || $order->get_date_paid() ) {
+                        continue;
+                    }
                     // Same filter and default as wc_cancel_unpaid_orders()
                     if ( !apply_filters( 'woocommerce_cancel_unpaid_order', in_array( $order->get_created_via(), array('checkout', 'store-api'), true ), $order ) ) {
                         continue;
                     }
-                    $order->update_status( 'cancelled', __( $this->id . ' on-hold order cancelled: woocommerce hold time limit reached', 'woocommerce' ) );
+                    /* translators: %s: payment method ID */
+                    $order->update_status( 'cancelled', sprintf( __( '%s on-hold order cancelled: woocommerce hold time limit reached', WCZELLE_PLUGIN_TEXT_DOMAIN ), $this->id ) );
                 } catch ( \Throwable $th ) {
-                    wc_get_logger()->error( "Cancel on-hold order {$order_id}: {$th}", array(
-                        'source' => $this->id,
-                    ) );
+                    $this->wcz_log( "Cancel on-hold order {$order_id}: {$th}", 'error' );
                 }
             }
         }

@@ -2,10 +2,10 @@
 Contributors: theafricanboss
 Donate Link: https://gurastores.com/get-cash
 Tags: zelle,bank transfer,woocommerce,payments,money transfer
-Stable tag: 5.0
+Stable tag: 5.1
 Requires PHP: 7.0
 Requires at least: 6.0
-Tested up to: 7.1.3
+Tested up to: 7.1.4
 Requires Plugins: woocommerce
 WC requires at least: 6.0.0
 WC tested up to: 11.2.1
@@ -16,7 +16,7 @@ Receive Zelle payments on your website with WooCommerce + Zelle
 
 == Description ==
 
-**HPOS compatibility & WooCommerce Blocks support**
+**Zelle automated order processing (PRO), checkout popup, HPOS compatibility & WooCommerce Blocks support**
 **Unlock more great features for you and your customers and priority support with a PRO license. [Upgrade](https://theafricanboss.com/zelle)**
 
 Checkout with Zelle on Woocommerce is a plugin that allows you to receive Zelle payments on your website with WooCommerce.
@@ -129,27 +129,26 @@ Also using our SMS for Woocommerce plugin, you can send personalized bulk email 
 
 == Usage ==
 
-After activating the plugin, add your Zelle information such as your Zelle name, Zelle email, Zelle phone number in the plugin settings to start receiving payments instantly.
+After activating the plugin, add your Zelle information such as your Zelle name, Zelle tag, Zelle email, Zelle phone number in the plugin settings to start receiving payments instantly.
 
 **Unlock more great features for you and your customers and priority support with a PRO license. [Upgrade](https://theafricanboss.com/zelle)**
 
-== Disclaimer ==
-
-The term 'Zelle' is a trademark of Early Warning Services, LLC. This plugin uses the Zelle API but is not endorsed or affiliated with Early Warning Services, LLC.
-
 == Upgrade Notice ==
 
-= 5.0 =
-This update is a feature, enhancement, compatibility, maintenance and security release. Updating is highly recommended.
-On-hold Zelle orders are cancelled automatically once WooCommerce's "Hold stock (minutes)" passes, like pending orders. Set this under WooCommerce › Settings › Products › Inventory if you confirm Zelle payments manually.
+= 5.1 =
+This update is a feature, enhancement, maintenance release. Updating is highly recommended.
+Improved the new checkout popup order experience (no more drafts, etc) and order management
 
 == Changelog ==
 
-= 5.0 May-Oct 15, 2026 =
+= 5.0-5.1 May-Oct 15, 2026 =
 - Added a popup design (PRO) that opens on Place order and shows Zelle payment details in a dialog, like modern payment methods
 - Added support for the popup design for Zelle info on the checkout page
 - Applied the popup experience to the WooCommerce classic checkout and Blocks checkout
-- The checkout popup shows the order number as the payment memo, and uses WooCommerce's checkout-draft status, on both classic and block checkout
+- The checkout popup shows the order number as the payment memo and amount, on both classic and block checkout
+- Popup orders stay as pending payment (no more drafts) while the popup is open, go on-hold once the customer confirms, and go to processing/completed when emailreceipts.io matches the payment
+- An order paid while its popup was open goes straight to its order confirmation page
+- Improved order stock and coupon management in the popup
 - Popup falls back to a normal Place order submission if JavaScript is unavailable or the popup fails to open
 - The Checkout Page Notice now appears inside the popup
 - Added the Zelle Tag field and setting
@@ -159,19 +158,19 @@ On-hold Zelle orders are cancelled automatically once WooCommerce's "Hold stock 
 - Popup content reuses WooCommerce's own button, input and form-row classes instead of custom styling
 - Simplified checkout.css to remove non-essential classes so the checkout adapts to any active theme
 - Better enqueue handling for scripts and styles
-- On-hold Zelle orders are cancelled automatically once WooCommerce's "Hold stock (minutes)" passes, like pending orders
+- Unpaid on-hold Zelle orders are cancelled automatically once WooCommerce's "Hold stock (minutes)" passes, like pending orders
 - Added syncing with emailreceipts.io accounts
 - Refactored code across plugin for better performance
 - Updated PHP, Freemius, Woocommerce and Wordpress compatibility
 
 = 4.1.1 May 15, 2025 =
-- Refactored code across plugin for better performance
 - Added blueprint.json to the plugin
 - Fixed wc_zelle_qrcode when no QR code URL is provided
 - Fixed [E_DEPRECATED] Creation of dynamic property with AllowDynamicProperties
 - Fixed QR code styling for #wc_zelle_qrcode img size
 - Fixed wc_get_orders matching orders for processing in wc_zelle_find_zelle_order
 - Fixed load_plugin_textdomain was called incorrectly error with init load_plugin_textdomain and get_plugin_data fix
+- Refactored code across plugin for better performance
 - Updated Freemius, Woocommerce and Wordpress compatibility
 
 = 4.0 Jun 15, 2024 =

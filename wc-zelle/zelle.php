@@ -3,18 +3,18 @@
 /*
 Plugin Name: Checkout with Zelle on Woocommerce
 Plugin URI: https://theafricanboss.com/zelle
-Description: The top bank to bank payments method now on WordPress. Receive Zelle payments on your website with WooCommerce + Zelle
+Description: The top bank to bank payment method now on WordPress. Receive Zelle payments on your website with WooCommerce + Zelle
 Author: The African Boss
 Author URI: https://theafricanboss.com
-Version: 5.0
+Version: 5.1
 Requires PHP: 7.0
 Requires at least: 6.0
-Tested up to: 7.1.3
+Tested up to: 7.1.4
 Requires Plugins: woocommerce
 WC requires at least: 6.0.0
 WC tested up to: 11.2.1
 Text Domain: wc-zelle
-Domain Path: languages
+Domain Path: /languages
 Created: 2021
 Copyright 2026 theafricanboss.com All rights reserved
 */
@@ -166,7 +166,7 @@ if ( function_exists( 'zelle_fs' ) ) {
             require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_gateway.php';
             require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_update_order.php';
             require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_sync_accounts.php';
-            require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_draft_order.php';
+            require_once WCZELLE_PLUGIN_DIR . 'includes/class-wc_zelle_popup_order.php';
         } else {
             require_once WCZELLE_PLUGIN_DIR . 'includes/notifications/woocommerce.php';
         }

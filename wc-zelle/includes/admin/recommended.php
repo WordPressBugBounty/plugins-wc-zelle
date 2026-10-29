@@ -10,7 +10,7 @@
         <div class="col-12 col-md-6">
             <div class="card">
                 <a href="https://theafricanboss.com/cashapp" target="_blank">
-                    <img src="<?php echo (WCZELLE_PLUGIN_DIR_URL . 'assets/images/cashapp.png'); ?>" class="card-img-top" alt="Checkout with Cash App on Woocommerce PRO">
+                    <img src="<?php echo esc_url( WCZELLE_PLUGIN_DIR_URL . 'assets/images/cashapp.png' ); ?>" class="card-img-top" alt="Checkout with Cash App on Woocommerce PRO">
                 </a>
                 <div class="card-body">
                     <h5 class="card-title">Checkout with Cash App on Woocommerce PRO</h5>
@@ -22,7 +22,7 @@
         <div class="col-12 col-md-6">
             <div class="card">
                 <a href="https://theafricanboss.com/venmo" target="_blank">
-                    <img src="<?php echo (WCZELLE_PLUGIN_DIR_URL . 'assets/images/venmo.png'); ?>" class="card-img-top" alt="Checkout with Venmo PRO">
+                    <img src="<?php echo esc_url( WCZELLE_PLUGIN_DIR_URL . 'assets/images/venmo.png' ); ?>" class="card-img-top" alt="Checkout with Venmo PRO">
                 </a>
                 <div class="card-body">
                     <h5 class="card-title">Checkout with Venmo PRO | Checkout on Woocommerce with Venmo</h5>
@@ -37,10 +37,10 @@
         <div class="col-12 col-md-6">
             <div class="card">
                 <a href="https://theafricanboss.com/get-cash" target="_blank">
-                    <img src="<?php echo (WCZELLE_PLUGIN_DIR_URL . 'assets/images/get-cash-buttons-qr-codes.jpg'); ?>" class="card-img-top" alt="Get Cash PRO">
+                    <img src="<?php echo esc_url( WCZELLE_PLUGIN_DIR_URL . 'assets/images/get-cash-buttons-qr-codes.jpg' ); ?>" class="card-img-top" alt="Get Cash PRO">
                 </a>
                 <div class="card-body">
-                    <h5 class="card-title">Get Cash PRO | For donations, tips, funds from Venmo, Venmo, PayPal</h5>
+                    <h5 class="card-title">Get Cash PRO | For donations, tips, funds from Cash App, Venmo, PayPal</h5>
                     <p class="card-text">This plugin adds QR codes anywhere to your site to accept donations, tips, funds, support, etc</p>
                     <a href="https://theafricanboss.com/get-cash" class="btn btn-success" target="_blank">Buy for $19</a>
                 </div>
@@ -48,8 +48,8 @@
         </div>
         <div class="col-12 col-md-6">
             <div class="card">
-                <a href="<?php echo admin_url('plugin-install.php?s=theafricanboss&tab=search&type=author'); ?>">
-                    <img src="<?php echo (WCZELLE_PLUGIN_DIR_URL . 'assets/images/momo-logo.jpg'); ?>" class="card-img-top" alt="MOMO – Mobile Money Payment Woocommerce Extension" height="150">
+                <a href="<?php echo esc_url( admin_url('plugin-install.php?s=theafricanboss&tab=search&type=author') ); ?>">
+                    <img src="<?php echo esc_url( WCZELLE_PLUGIN_DIR_URL . 'assets/images/momo-logo.jpg' ); ?>" class="card-img-top" alt="MOMO – Mobile Money Payment Woocommerce Extension" height="150">
                 </a>
                 <div class="card-body">
                     <h5 class="card-title">MOMO – Mobile Money Payment Woocommerce Extension</h5>

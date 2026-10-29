@@ -51,6 +51,7 @@ if ( ! function_exists( 'wc_zelle_copy_row' ) ) {
 		$html  = '<div class="theafricanboss-row">';
 		$html .= '<dt>' . $label . '</dt>';
 		$html .= '<dd><span class="theafricanboss-value"' . ( '' !== $attributes ? ' ' . $attributes : '' ) . '>' . esc_html( $value ) . '</span>';
+		/* translators: %s: label of the value to copy, e.g. Email */
 		$html .= '<button type="button" class="theafricanboss-copy" aria-label="' . esc_attr( sprintf( __( 'Copy %s', WCZELLE_PLUGIN_TEXT_DOMAIN ), wp_strip_all_tags( $label ) ) ) . '">' . esc_html__( 'Copy', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</button>';
 		$html .= '</dd></div>';
 

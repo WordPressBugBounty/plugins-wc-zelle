@@ -30,14 +30,20 @@ if ( empty( $this->ReceiverZELLEEmail ) && empty( $this->ReceiverZELLENo ) && em
     do_action( 'woocommerce_form_end', $this->id );
     $checkout_html .= '<input name="' . $this->id . 'do_not_checkout" type="hidden" value="true"><div class="clear"></div></fieldset>';
     echo $checkout_html;
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built
     return;
 }
 // $checkout_html .= '<p>' . wp_kses_post( sprintf( __( 'Send %s via %s or from your bank', WCZELLE_PLUGIN_TEXT_DOMAIN ), $total, '<a style="color: #6d1fd4" href="https://zellepay.com/" target="_blank">Zelle</a>'  ) ) . '.</p>';
+/* translators: %s: order total */
 $checkout_html .= '<p>' . wp_kses_post( sprintf( __( 'Send %s from your bank via Zelle', WCZELLE_PLUGIN_TEXT_DOMAIN ), $total ) ) . '.</p>';
 $checkout_html .= '<p>' . esc_html__( 'Here are the Zelle details you should know for the transfer', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</p>';
+/* translators: %s: payment method name, Zelle */
 $checkout_html .= '<p>' . sprintf( esc_html__( '%s Name', WCZELLE_PLUGIN_TEXT_DOMAIN ), 'Zelle' ) . ': <strong>' . esc_html( $this->ReceiverZelleOwner ) . '</strong><br>';
+/* translators: %s: payment method name, Zelle */
 $checkout_html .= sprintf( esc_html__( '%s Tag', WCZELLE_PLUGIN_TEXT_DOMAIN ), 'Zelle' ) . ': <strong>' . esc_html( $this->ReceiverZelleTag ) . '</strong><br>';
+/* translators: %s: payment method name, Zelle */
 $checkout_html .= sprintf( esc_html__( '%s Email', WCZELLE_PLUGIN_TEXT_DOMAIN ), 'Zelle' ) . ': <strong>' . esc_html( $this->ReceiverZELLEEmail ) . '</strong><br>';
+/* translators: %s: payment method name, Zelle */
 $checkout_html .= sprintf( esc_html__( '%s Phone', WCZELLE_PLUGIN_TEXT_DOMAIN ), 'Zelle' ) . ': <strong>' . esc_html( $this->ReceiverZELLENo ) . '</strong></p>';
 $checkout_html .= '<p>' . wp_kses_post( __( 'Please <strong>use your Order Number (available once you place order)</strong> as the payment reference', WCZELLE_PLUGIN_TEXT_DOMAIN ) ) . '.</p>';
 $checkout_html .= '<p><strong>' . esc_html__( 'After paying, please come back here and place the order below', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</strong> ' . esc_html__( 'so we can start processing your order', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '.</p>';
@@ -66,6 +72,7 @@ do_action( 'woocommerce_form_end', $this->id );
 $checkout_html .= '<div class="clear"></div></fieldset>';
 if ( !$use_popup ) {
     echo $checkout_html;
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built
     //return $checkout_html;
     return;
 }
@@ -76,7 +83,7 @@ $popup_html .= '<p>' . esc_html__( 'Place order to get payment details and instr
 // Without JavaScript there is no popup, so the notice stays on the page in a <noscript> (no flash)
 $popup_html .= '<noscript>';
 if ( !empty( $this->checkout_description ) ) {
-    $popup_html .= '<p>' . wp_kses_post( wpautop( wptexturize( __( $this->checkout_description, WCZELLE_PLUGIN_TEXT_DOMAIN ) ) ) ) . '</p>';
+    $popup_html .= '<p>' . wp_kses_post( wpautop( wptexturize( $this->checkout_description ) ) ) . '</p>';
 }
 $popup_html .= '<p>' . esc_html__( 'Your order will not be processed until funds have cleared in our Zelle/Bank account', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '.</p>';
 $popup_html .= '</noscript>';
@@ -103,7 +110,9 @@ $popup_html .= '<p class="form-row validate-required wcz-popup-confirmed">
 // Deliberately not .woocommerce-error: checkout.js removes every node carrying that
 // class whenever it renders a checkout error, and this one has to outlive that
 $popup_html .= '<p class="wcz-popup-error" role="alert" hidden></p>';
-$popup_html .= '<button type="button" class="' . esc_attr( wc_zelle_button_class( true, 'wcz-popup-confirm' ) ) . '">' . sprintf( esc_html__( 'I have sent %s, confirm my order', WCZELLE_PLUGIN_TEXT_DOMAIN ), wp_kses_post( $total ) ) . '</button>';
+/* translators: %s: order total */
+$popup_html .= '<button type="button" class="' . esc_attr( wc_zelle_button_class( true, 'wcz-popup-confirm' ) ) . '">' . sprintf( esc_html__( 'I have sent %s, confirm my order', WCZELLE_PLUGIN_TEXT_DOMAIN ), '<span data-wcz-order-total="1">' . wp_kses_post( $total ) . '</span>' ) . '</button>';
 $popup_html .= '</div>';
 $popup_html .= '</div></div>';
 echo $popup_html;
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built

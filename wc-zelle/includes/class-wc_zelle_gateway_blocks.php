@@ -34,22 +34,9 @@ final class WC_Zelle_Gateway_Blocks_Support extends AbstractPaymentMethodType {
     }
 
     public function get_payment_method_script_handles() {
-        /* **************************VERSION 1************************** */
-        // $script_path       = 'assets/js/frontend/blocks.js';
-        // $script_asset_path = WCZELLE_PLUGIN_DIR . 'assets/js/frontend/blocks.asset.php';
-        // $script_asset      = file_exists( $script_asset_path ) ? require( $script_asset_path ) : array( 'dependencies' => array(), 'version'      => '1.2.0' );
-        // $script_url        = WCZELLE_PLUGIN_DIR_URL . $script_path;
-        // wp_register_script(
-        // 	'wc_zelle_gateway_blocks',
-        // 	$script_url,
-        // 	$script_asset[ 'dependencies' ],
-        // 	$script_asset[ 'version' ],
-        // 	true
-        // );
-        /* **************************VERSION 2************************** */
         wp_register_script(
             'wc_zelle_gateway_blocks',
-            WCZELLE_PLUGIN_DIR_URL . 'assets/js/frontend/blocks.js',
+            WCZELLE_PLUGIN_DIR_URL . 'assets/js/blocks.js',
             array(
                 'wc-blocks-registry',
                 'wc-settings',
@@ -60,15 +47,6 @@ final class WC_Zelle_Gateway_Blocks_Support extends AbstractPaymentMethodType {
             WCZELLE_VERSION,
             true
         );
-        /* **************************VERSION 3************************** */
-        // wp_register_script_module
-        // wp_register_script(
-        // 	'wc_zelle_gateway_blocks',
-        // 	WCZELLE_PLUGIN_DIR_URL .  'assets/js/frontend/index.js',
-        // 	array(),
-        // 	null, // or time() or filemtime( ... ) to skip caching
-        // 	true
-        // );
         if ( function_exists( 'wp_set_script_translations' ) ) {
             wp_set_script_translations( 'wc_zelle_gateway_blocks', WCZELLE_PLUGIN_TEXT_DOMAIN, WCZELLE_PLUGIN_DIR . 'languages/' );
         }
@@ -77,7 +55,7 @@ final class WC_Zelle_Gateway_Blocks_Support extends AbstractPaymentMethodType {
 
     /**
      * Data for the block checkout's Zelle payment method, printed publicly in the page as wcSettings zelle_data.
-     * Only the keys assets/js/frontend/blocks.js reads, never the stored gateway settings
+     * Only the keys assets/js/blocks.js reads, never the stored gateway settings
      *
      * @return array
      */
@@ -86,16 +64,19 @@ final class WC_Zelle_Gateway_Blocks_Support extends AbstractPaymentMethodType {
         if ( $use_popup ) {
             $description = esc_html__( 'Place order to get payment details and instructions to proceed', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '.';
         } else {
-            $description = "Place your order then follow instructions on the order confirmation page to pay";
+            $description = __( 'Place your order then follow instructions on the order confirmation page to pay', WCZELLE_PLUGIN_TEXT_DOMAIN );
         }
         return array(
-            'title'          => $this->gateway->title,
-            'description'    => $description,
-            'icon'           => $this->gateway->icon,
-            'supports'       => $this->get_supported_features(),
-            'popup'          => $use_popup,
-            'popup_endpoint' => WC_AJAX::get_endpoint( 'wc_zelle_blocks_popup' ),
-            'popup_i18n'     => array(
+            'title'            => $this->gateway->title,
+            'description'      => $description,
+            'icon'             => $this->gateway->icon,
+            'supports'         => $this->get_supported_features(),
+            'popup'            => $use_popup,
+            'popup_endpoint'   => WC_AJAX::get_endpoint( 'wc_zelle_blocks_popup' ),
+            'popup_nonce'      => ( $use_popup ? wp_create_nonce( 'wc-zelle-popup' ) : '' ),
+            'waiting'          => ( $use_popup && isset( $GLOBALS['WC_Zelle_Popup_Order'] ) && $GLOBALS['WC_Zelle_Popup_Order'] instanceof WC_Zelle_Popup_Order ? $GLOBALS['WC_Zelle_Popup_Order']->wc_zelle_waiting_notice() : '' ),
+            'confirm_endpoint' => WC_AJAX::get_endpoint( 'wc_zelle_confirm_order' ),
+            'popup_i18n'       => array(
                 'confirm_required' => esc_html__( 'Please confirm that you have sent the payment.', WCZELLE_PLUGIN_TEXT_DOMAIN ),
                 'cancelled'        => esc_html__( 'Confirm the payment in the window to place your order.', WCZELLE_PLUGIN_TEXT_DOMAIN ),
             ),

@@ -75,6 +75,22 @@ function TABQRCodeGenerator(element, qrcode_object) {
 		});
 		// console.log("qrcode", qrcode);
 
+		// qr-code-styling floors each module to whole pixels at the requested size, so a
+		// dense code (a long Zelle link) drawn at ~150px gets only ~4px per module - too
+		// few for its dots and curves to stay crisp, and the anti-aliasing reads as gray
+		// rather than black. Redraw at an exact multiple of the module count instead; the
+		// <img> below still shows it at the original size. Same fix as get-cash's fitQr()
+		var model = qrcode._qr;
+		var count =
+			model && typeof model.getModuleCount === "function"
+				? model.getModuleCount()
+				: 0;
+		if (count) {
+			var scale = Math.max(3, Math.ceil(window.devicePixelRatio || 1));
+			var px = count * Math.ceil((qrcode_object.width * scale) / count);
+			qrcode.update({ width: px, height: px });
+		}
+
 		let b64 = null;
 		// // https://github.com/kozakdenys/qr-code-styling/blob/master/README.md#qrcodestyling-methods
 		// qrcode.append(element);

@@ -1,4 +1,4 @@
-// Zelle payment method for the block checkout. Design 1 (PRO) opens the classic checkout's popup on Place order, with the Store API draft order's number as the memo.
+// Zelle payment method for the block checkout. Design 1 (PRO) opens the classic checkout's popup on Place order, with the Store API popup order's number as the memo.
 // The popup lives on document.body, outside React, so re-renders cannot wipe it.
 
 (() => {
@@ -15,10 +15,23 @@
 	const i18n = settings.popup_i18n || {};
 	const usePopup = !!settings.popup && !!settings.popup_endpoint;
 
-	// Lives outside React. Also holds the sender value between the popup closing and
-	// onPaymentSetup handing it to the Store API
+	// Lives outside React
 	let host = null;
-	let sender = "";
+
+	// Renewed by every popup response
+	let popupNonce = settings.popup_nonce || "";
+
+	// Tolerates PHP notices printed ahead of the JSON, like WooCommerce's checkout.js
+	function readJson(response) {
+		return response.text().then((text) => {
+			try {
+				return JSON.parse(text);
+			} catch (err) {
+				const json = text.match(/\{".*\}/);
+				return json ? JSON.parse(json[0]) : null;
+			}
+		});
+	}
 
 	function teardown() {
 		if (host && host.parentNode) {
@@ -51,14 +64,59 @@
 		error.hidden = !message;
 	}
 
-	// Resolves true to let the checkout run, false when the customer backs out
+	// Resolves with the confirmation page URL when the order is already handled, otherwise empty
+	function confirmOrder(data, retried) {
+		if (!settings.confirm_endpoint || !data.nonce) {
+			return Promise.resolve("");
+		}
+
+		// The order this popup showed, which the server confirms even if the session has moved on
+		const body = new URLSearchParams({
+			security: data.nonce,
+			order_id: data.order_id || 0,
+			order_key: data.order_key || "",
+			block: "1",
+		});
+		return (
+			fetch(settings.confirm_endpoint, {
+				method: "POST",
+				credentials: "same-origin",
+				body,
+			})
+				.then(readJson)
+				.then((result) =>
+					result && "success" === result.result && result.redirect
+						? result.redirect
+						: "",
+				)
+				// It may have gone through with only its response lost, and asking again returns that order
+				.catch(() => (retried ? "" : confirmOrder(data, true)))
+		);
+	}
+
+	// Resolves true to let the checkout run, false when the customer backs out, or { error } for the checkout to show
 	function openPopup() {
 		return fetch(settings.popup_endpoint, {
 			method: "POST",
 			credentials: "same-origin",
+			body: new URLSearchParams({ security: popupNonce }),
 		})
-			.then((response) => response.json())
+			.then(readJson)
 			.then((data) => {
+				if (data && data.popup_nonce) {
+					popupNonce = data.popup_nonce;
+				}
+
+				// Paid or confirmed already: its confirmation page, with the checkout held until it loads
+				if (data && data.redirect) {
+					window.location.href = data.redirect;
+					return new Promise(() => {});
+				}
+
+				if (data && data.error) {
+					return { error: data.error };
+				}
+
 				if (!data || !data.html) {
 					return true;
 				}
@@ -87,6 +145,11 @@
 				if (number) {
 					number.textContent = data.number || "";
 				}
+				if (data.total) {
+					popup.querySelectorAll("[data-wcz-order-total]").forEach((node) => {
+						node.innerHTML = data.total;
+					});
+				}
 
 				popup.hidden = false;
 				popup.setAttribute("aria-hidden", "false");
@@ -102,10 +165,9 @@
 
 				return new Promise((resolve) => {
 					const confirmed = popup.querySelector(
-						".wcz-popup-confirmed input[type='checkbox']"
+						".wcz-popup-confirmed input[type='checkbox']",
 					);
 					const confirmButton = popup.querySelector(".wcz-popup-confirm");
-					const senderField = popup.querySelector("#zelle_sender");
 
 					// Always a deliberate act, never left ticked from a previous open
 					if (confirmed) {
@@ -145,15 +207,26 @@
 								showError(
 									popup,
 									i18n.confirm_required ||
-										"Please confirm that you have sent the payment."
+										"Please confirm that you have sent the payment.",
 								);
 								confirmed.focus();
 								return;
 							}
 
-							sender = senderField ? senderField.value : "";
-							teardown();
-							resolve(true);
+							if (confirmButton.classList.contains("wcz-busy")) {
+								return;
+							}
+							confirmButton.classList.add("wcz-busy");
+
+							// A paid order goes straight to its confirmation page; an unpaid one through the Store API checkout, which resumes it
+							confirmOrder(data).then((redirect) => {
+								if (redirect) {
+									window.location.href = redirect;
+									return;
+								}
+								teardown();
+								resolve(true);
+							});
 						});
 					}
 
@@ -183,32 +256,38 @@
 			}
 
 			return eventRegistration.onCheckoutValidation(() =>
-				openPopup().then((proceed) =>
-					proceed
+				openPopup().then((outcome) =>
+					true === outcome
 						? true
 						: {
 								type: emitResponse.responseTypes.ERROR,
 								errorMessage:
+									(outcome && outcome.error) ||
 									i18n.cancelled ||
 									"Confirm the payment in the window to place your order.",
-						  }
-				)
+							},
+				),
 			);
 		}, [eventRegistration, emitResponse]);
 
-		// The Store API copies payment data into $_POST, so the gateway sees this like a classic checkout field
-		el.useEffect(() => {
-			if (!emitResponse || !eventRegistration || !eventRegistration.onPaymentSetup) {
-				return;
-			}
+		const description = (0, htmlEntities.decodeEntities)(
+			settings.description || "",
+		);
+		if (!settings.waiting) {
+			return description;
+		}
 
-			return eventRegistration.onPaymentSetup(() => ({
-				type: emitResponse.responseTypes.SUCCESS,
-				meta: { paymentMethodData: { zelle_sender: sender } },
-			}));
-		}, [eventRegistration, emitResponse]);
-
-		return (0, htmlEntities.decodeEntities)(settings.description || "");
+		// An order from a popup that was closed or lost to a page reload, which Place order shows again
+		return (0, el.createElement)(
+			el.Fragment,
+			null,
+			description,
+			(0, el.createElement)(
+				"p",
+				{ className: "wcz-popup-waiting" },
+				(0, el.createElement)("strong", null, settings.waiting),
+			),
+		);
 	};
 
 	const Label = (props) => {
