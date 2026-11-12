@@ -2,13 +2,13 @@
 Contributors: theafricanboss
 Donate Link: https://gurastores.com/get-cash
 Tags: zelle,bank transfer,woocommerce,payments,money transfer
-Stable tag: 5.1
+Stable tag: 5.1.1
 Requires PHP: 7.0
 Requires at least: 6.0
 Tested up to: 7.1.4
 Requires Plugins: woocommerce
 WC requires at least: 6.0.0
-WC tested up to: 11.2.1
+WC tested up to: 11.3.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -135,13 +135,13 @@ After activating the plugin, add your Zelle information such as your Zelle name,
 
 == Upgrade Notice ==
 
-= 5.1 =
+= 5.1.1 =
 This update is a feature, enhancement, maintenance release. Updating is highly recommended.
 Improved the new checkout popup order experience (no more drafts, etc) and order management
 
 == Changelog ==
 
-= 5.0-5.1 May-Oct 15, 2026 =
+= 5.0-5.1.1 May-Oct 15, 2026 =
 - Added a popup design (PRO) that opens on Place order and shows Zelle payment details in a dialog, like modern payment methods
 - Added support for the popup design for Zelle info on the checkout page
 - Applied the popup experience to the WooCommerce classic checkout and Blocks checkout

@@ -43,9 +43,15 @@ class WC_Zelle_Popup_Order {
 	/** WooCommerce's own session key for the block checkout's order, read by its Store API. Never rename it. @see DraftOrderTrait */
 	const BLOCKS_POPUP_KEY = 'store_api_draft_order';
 
+	/** wc_zelle_skip_popup() answers, by cart hash. */
+	protected $skip_popup = array();
+
+	/** Read before WooCommerce logs the new account in, when this request is a checkout. @see wc_zelle_checkout_process() */
+	protected $creates_account = null;
+
 	public function register() {
 		// The block checkout's Place order, before the Store API looks up its order: it resumes the one the popup showed
-		add_action( 'woocommerce_store_api_checkout_update_customer_from_request', array( $this, 'wc_zelle_store_api_resume_popup_order' ) );
+		add_action( 'woocommerce_store_api_checkout_update_customer_from_request', array( $this, 'wc_zelle_store_api_resume_popup_order' ), 10, 2 );
 
 		// Before wc_clear_cart_after_payment() (20), which would empty the cart and leave the customer on an empty cart page
 		add_action( 'template_redirect', array( $this, 'wc_zelle_checkout_redirect' ), 15 );
@@ -84,7 +90,7 @@ class WC_Zelle_Popup_Order {
 		if ( ! $order instanceof WC_Order || $this->id !== $order->get_payment_method() ) { return; }
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WC_Checkout::process_checkout() verified the checkout nonce before this ran
-		if ( empty( $_POST['wc_zelle_popup'] ) ) {
+		if ( empty( $_POST['wc_zelle_popup'] ) || $this->wc_zelle_skip_popup() ) {
 			if ( 'checkout-draft' === $order->get_status() ) {
 				$order->set_status( 'pending', __( 'Order number previously shown to the customer in the Zelle checkout popup, awaiting their confirmation.', WCZELLE_PLUGIN_TEXT_DOMAIN ) );
 			}
@@ -126,6 +132,11 @@ class WC_Zelle_Popup_Order {
 		$settled = $this->wc_zelle_settled_popup_order();
 		if ( $settled ) {
 			wp_send_json( array( 'redirect' => $this->wc_zelle_finish_popup_order( $settled ) ) );
+		}
+
+		// No popup for this cart: the Store API checkout places the order outright
+		if ( $this->wc_zelle_skip_popup() ) {
+			wp_send_json( array( 'html' => '', 'number' => '' ) );
 		}
 
 		// The Store API's own cart checks (stock, coupons), before the customer pays rather than after
@@ -347,30 +358,24 @@ class WC_Zelle_Popup_Order {
 	 * Block checkout Place order: WooCommerce resumes its session order only while its cart hash matches, so the popup's order is
 	 * brought up to date with the posted address before the Store API looks, and parked under its key
 	 */
-	public function wc_zelle_store_api_resume_popup_order() {
+	public function wc_zelle_store_api_resume_popup_order( $customer = null, $request = null ) {
 		$order_id = $this->wc_zelle_popup_order_id();
 		$order    = $order_id ? wc_get_order( $order_id ) : null;
 		if ( ! $order instanceof WC_Order || ! WC()->cart ) { return; }
 
+		// Another payment method gets its own order, as on the classic checkout. @see wc_zelle_checkout_process()
+		$method = $request instanceof WP_REST_Request ? (string) $request->get_param( 'payment_method' ) : $this->id;
+		if ( $this->id !== $method ) {
+			if ( absint( WC()->session->get( self::BLOCKS_POPUP_KEY, 0 ) ) === $order_id ) {
+				WC()->session->set( self::BLOCKS_POPUP_KEY, null );
+			}
+			$this->wc_zelle_release_popup_order( sprintf( 'the customer placed the checkout with %s instead', $method ? $method : 'another payment method' ) );
+			return;
+		}
+
 		if ( $this->wc_zelle_blocks_update_popup_order( $order ) ) {
 			WC()->session->set( self::BLOCKS_POPUP_KEY, $order->get_id() );
 		}
-	}
-
-	/**
-	 * This session's popup order while it still waits for the customer to confirm it, as a line for the checkout page
-	 * @return string Empty when there is none
-	 */
-	public function wc_zelle_waiting_notice() {
-		return ''; // skip the waiting notice for now
-		$order_id = $this->wc_zelle_popup_order_id();
-		$order    = $order_id ? wc_get_order( $order_id ) : null;
-
-		if ( ! $order instanceof WC_Order || $this->id !== $order->get_payment_method() || $order->get_date_paid() ) { return ''; }
-		if ( ! $order->has_status( array( 'pending', 'cancelled' ) ) ) { return ''; }
-
-		/* translators: %s: order number */
-		return sprintf( __( 'Your order #%s is waiting for your Zelle payment. Place order again to see its payment details, and confirm it once you have sent the payment.', WCZELLE_PLUGIN_TEXT_DOMAIN ), $order->get_order_number() );
 	}
 
 	/**
@@ -404,7 +409,21 @@ class WC_Zelle_Popup_Order {
 
 		// The Store API's own reuse test, so this never strands an order it would pick up
 		if ( $order instanceof WC_Order ) {
-			if ( $order->has_status( 'checkout-draft' ) ) { return $order; }
+			// The popup shows its total as the amount to send, and the cart may have changed since the draft was made
+			if ( $order->has_status( 'checkout-draft' ) ) {
+				$controller = '\Automattic\WooCommerce\StoreApi\Utilities\OrderController';
+				if ( ! class_exists( $controller ) ) { return null; }
+				try {
+					( new $controller() )->update_order_from_cart( $order, true );
+				} catch ( \Throwable $e ) {
+					$gateways = WC()->payment_gateways ? WC()->payment_gateways->payment_gateways() : array();
+					if ( ! empty( $gateways[ $this->id ] ) ) {
+						$gateways[ $this->id ]->wcz_log( 'Block checkout popup skipped, could not update draft order ' . $order->get_id() . ': ' . $e->getMessage(), 'error' );
+					}
+					return null;
+				}
+				return $order;
+			}
 			if ( $order->needs_payment() && $order->has_cart_hash( WC()->cart->get_cart_hash() ) ) { return $order; }
 
 			// The order this popup already showed, after a cart change or the hold stock timer: kept, so its number stays the memo
@@ -471,6 +490,9 @@ class WC_Zelle_Popup_Order {
 	 * Release the popup's order when the checkout is placed with another payment method, before that method creates its own order
 	 */
 	public function wc_zelle_checkout_process() {
+		$this->creates_account = null;
+		$this->creates_account = $this->wc_zelle_creates_account();
+
 		if ( ! $this->wc_zelle_use_popup() ) { return; }
 
 		// Paid or confirmed since the popup showed it, e.g. emailreceipts.io matched it while the popup was open: this cart is that order
@@ -555,18 +577,87 @@ class WC_Zelle_Popup_Order {
 	}
 
 	/**
-	 * Is the checkout popup the active design? Read from the stored settings with the same legacy and PRO rules as WC_Zelle_Gateway::wc_zelle_display()
+	 * Is the checkout popup the active design? Read from the stored settings through the gateway's own design rules
 	 *
-	 * @see WC_Zelle_Gateway::wc_zelle_display()
+	 * @see WC_Zelle_Gateway::wc_zelle_design()
 	 * @return bool
 	 */
 	public function wc_zelle_use_popup() {
-		if ( ! function_exists( 'zelle_fs' ) || ! zelle_fs()->is_plan__premium_only('pro') ) { return false; }
+		if ( ! class_exists( 'WC_Zelle_Gateway' ) || ! function_exists( 'zelle_fs' ) ) { return false; }
 
 		$settings = get_option( "woocommerce_{$this->id}_settings", array() );
-		$design   = isset( $settings['display_zelle'] ) ? (string) $settings['display_zelle'] : '';
+		$stored   = is_array( $settings ) && isset( $settings['display_zelle'] ) ? $settings['display_zelle'] : '';
 
-		return in_array( $design, array( '1', 'no' ), true );
+		return '1' === WC_Zelle_Gateway::wc_zelle_design( $stored );
+	}
+
+	/**
+	 * Carts placed without the popup, straight to the order received page, which shows the same Zelle details
+	 * @return bool
+	 */
+	public function wc_zelle_skip_popup() {
+		// The popup's checkout would create the account and send its welcome email before the customer confirms
+		if ( $this->wc_zelle_creates_account() ) { return true; }
+
+		if ( ! WC()->cart ) { return false; }
+
+		// Once per cart and request, so the order's own stock hold, taken mid-checkout, cannot change the answer
+		$hash = WC()->cart->get_cart_hash();
+		if ( ! isset( $this->skip_popup[ $hash ] ) ) {
+			$this->skip_popup[ $hash ] = $this->wc_zelle_cart_skips_popup( WC()->cart );
+		}
+		return $this->skip_popup[ $hash ];
+	}
+
+	/**
+	 * Will the classic checkout create an account for this guest? WooCommerce's own test. @see WC_Checkout::process_customer()
+	 * @return bool
+	 */
+	public function wc_zelle_creates_account() {
+		if ( null !== $this->creates_account ) { return $this->creates_account; }
+
+		// The block checkout creates its account only on the checkout that follows the confirm
+		if ( doing_action( 'wc_ajax_wc_zelle_blocks_popup' ) || is_user_logged_in() || ! function_exists( 'WC' ) || ! WC()->checkout() ) { return false; }
+
+		$checkout = WC()->checkout();
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- only reads whether the guest asked for an account
+		$ticked = $checkout->is_registration_enabled() && ! empty( $_POST['createaccount'] );
+
+		return $checkout->is_registration_required() || $ticked;
+	}
+
+	/**
+	 * @param WC_Cart $cart The cart being checked out.
+	 * @return bool
+	 */
+	protected function wc_zelle_cart_skips_popup( $cart ) {
+		// The popup's waiting order would hold its coupons, and the next checkout pass counts that hold against them
+		if ( $cart->get_applied_coupons() ) { return true; }
+
+		// Gift cards, store credit, points or deposits as a negative fee: the waiting order would spend the balance
+		foreach ( $cart->get_fees() as $fee ) {
+			if ( isset( $fee->total ) && (float) $fee->total < 0 ) { return true; }
+		}
+		// A total another plugin changed after WooCommerce added it up, either way: the waiting order may not keep it on a later pass
+		$parts = (float) $cart->get_cart_contents_total() + (float) $cart->get_cart_contents_tax() + (float) $cart->get_shipping_total() + (float) $cart->get_shipping_tax() + (float) $cart->get_fee_total() + (float) $cart->get_fee_tax();
+		if ( abs( round( $parts - (float) $cart->get_total( 'edit' ), wc_get_price_decimals() ) ) > 0.01 ) { return true; }
+
+		// Subscriptions, bookings, tickets and other plugin types create their own records with the order
+		foreach ( $cart->get_cart() as $item ) {
+			$product = isset( $item['data'] ) ? $item['data'] : null;
+			if ( $product instanceof WC_Product && ! in_array( $product->get_type(), array( 'simple', 'variable', 'variation', 'grouped', 'external' ), true ) ) { return true; }
+		}
+
+		// The last units: the waiting order's stock hold expires, and a late confirm would sell stock already sold
+		$exclude = $this->wc_zelle_popup_order_id();
+		if ( ! $exclude && WC()->session ) { $exclude = absint( WC()->session->get( self::BLOCKS_POPUP_KEY, 0 ) ); }
+		foreach ( $cart->get_cart_item_quantities() as $product_id => $quantity ) {
+			$product = wc_get_product( $product_id );
+			if ( ! $product || ! $product->managing_stock() || $product->backorders_allowed() ) { continue; }
+			if ( (float) $product->get_stock_quantity() - wc_get_held_stock_quantity( $product, $exclude ) - $quantity <= 0 ) { return true; }
+		}
+
+		return false;
 	}
 
 	/**
@@ -581,7 +672,7 @@ class WC_Zelle_Popup_Order {
 		if ( ! $order || $this->id !== $order->get_payment_method() ) { return; }
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WC_Checkout::process_checkout() verified the checkout nonce before this ran
-		$is_popup = ! empty( $_POST['wc_zelle_popup'] );
+		$is_popup = ! empty( $_POST['wc_zelle_popup'] ) && ! $this->wc_zelle_skip_popup();
 
 		if ( ! $is_popup || ! $this->wc_zelle_use_popup() ) {
 			// This is the order the customer confirmed, no longer held for the popup
@@ -614,9 +705,7 @@ class WC_Zelle_Popup_Order {
 			'number'   => $order->get_order_number(),
 			// The order's own total, which may differ from the one rendered at the last checkout refresh
 			'total'    => wc_price( $order->get_total(), array( 'currency' => $order->get_currency() ) ),
-			// Both created now: the checkout may just have logged a new account in, which voids the page's checkout nonce
-			'nonce'          => wp_create_nonce( 'wc-zelle-confirm' ),
-			'checkout_nonce' => wp_create_nonce( 'woocommerce-process_checkout' ),
+			'nonce'    => wp_create_nonce( 'wc-zelle-confirm' ),
 		) );
 	}
 

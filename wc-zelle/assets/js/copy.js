@@ -2,8 +2,6 @@
 // Handles both shared markups: .theafricanboss-row/-value/-copy, and the older .copytxt input + .copybtn.
 
 (function () {
-	"use strict";
-
 	var RESTORE_AFTER = 2000;
 
 	function strings() {
@@ -102,7 +100,9 @@
 			return;
 		}
 
-		var button = target.closest(".theafricanboss-copy") || target.closest(".copybtn");
+		var button =
+			target.closest(".theafricanboss-copy") ||
+			target.closest(".copybtn");
 		if (button) {
 			event.preventDefault();
 			copy(valueNear(button), button);
@@ -113,7 +113,10 @@
 		var field = target.closest(".copytxt");
 		if (field) {
 			var parent = field.parentElement;
-			copy(trim(field.value), parent ? parent.getElementsByClassName("copybtn")[0] : null);
+			copy(
+				trim(field.value),
+				parent ? parent.getElementsByClassName("copybtn")[0] : null,
+			);
 		}
 	});
 })();

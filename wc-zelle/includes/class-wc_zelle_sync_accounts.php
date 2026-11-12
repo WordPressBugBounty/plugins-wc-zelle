@@ -30,7 +30,7 @@ if ( !class_exists( 'WC_Zelle_Sync_Accounts' ) && class_exists( 'WC_Zelle_Update
             if ( empty( $body ) ) {
                 $body = $data->get_body_params();
             }
-            $signature = ( is_array( $data->get_headers() ) && !empty( $data->get_headers()['x_api_key'] ) ? wp_kses_post( $data->get_headers()['x_api_key'][0] ) : null );
+            $signature = ( is_array( $data->get_headers() ) && !empty( $data->get_headers()['x_api_key'] ) ? trim( (string) $data->get_headers()['x_api_key'][0] ) : null );
             $origin = get_bloginfo( 'url' );
             $message = "Response by: {$origin}\n";
             $message_array['url'] = $origin;

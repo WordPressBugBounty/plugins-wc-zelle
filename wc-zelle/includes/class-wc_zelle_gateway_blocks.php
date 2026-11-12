@@ -30,6 +30,10 @@ final class WC_Zelle_Gateway_Blocks_Support extends AbstractPaymentMethodType {
         if ( empty( $this->gateway ) ) {
             return false;
         }
+        // Nothing to pay to: the classic checkout refuses these orders. @see WC_Zelle_Gateway::validate_fields()
+        if ( empty( $this->gateway->ReceiverZELLEEmail ) && empty( $this->gateway->ReceiverZELLENo ) && empty( $this->gateway->ReceiverZelleTag ) ) {
+            return false;
+        }
         return !empty( $this->settings['enabled'] ) && 'yes' === $this->settings['enabled'];
     }
 
@@ -74,7 +78,6 @@ final class WC_Zelle_Gateway_Blocks_Support extends AbstractPaymentMethodType {
             'popup'            => $use_popup,
             'popup_endpoint'   => WC_AJAX::get_endpoint( 'wc_zelle_blocks_popup' ),
             'popup_nonce'      => ( $use_popup ? wp_create_nonce( 'wc-zelle-popup' ) : '' ),
-            'waiting'          => ( $use_popup && isset( $GLOBALS['WC_Zelle_Popup_Order'] ) && $GLOBALS['WC_Zelle_Popup_Order'] instanceof WC_Zelle_Popup_Order ? $GLOBALS['WC_Zelle_Popup_Order']->wc_zelle_waiting_notice() : '' ),
             'confirm_endpoint' => WC_AJAX::get_endpoint( 'wc_zelle_confirm_order' ),
             'popup_i18n'       => array(
                 'confirm_required' => esc_html__( 'Please confirm that you have sent the payment.', WCZELLE_PLUGIN_TEXT_DOMAIN ),

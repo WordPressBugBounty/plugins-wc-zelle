@@ -8,7 +8,6 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     add_filter( 'woocommerce_order_data_store_cpt_get_orders_query', array( $this, 'wc_zelle_order_number_query' ), 10, 2 );
   }
 
-  // Create CPT
   function wc_zelle_cpt() {
     if ( class_exists( 'Woocommerce' ) && !post_type_exists( "{$this->id}-receipts" ) ) {
       register_post_type( "{$this->id}-receipts",
@@ -24,8 +23,7 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
           'show_in_rest' => false,
           'has_archive' => false,
           'rewrite' => array('slug' => "{$this->id}-receipts"),
-          // The orders capabilities, so only the roles that can manage orders (administrators,
-          // shop managers and the like) can read receipts - never editors or authors
+          // The orders capabilities, so only the roles that can manage orders can read receipts - never editors or authors
           'capability_type' => 'shop_order', // do not use manage_woocommerce
           'map_meta_cap' => true,
           'capabilities' => array( 'create_posts' => 'do_not_allow' ),
@@ -37,7 +35,6 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     add_action( 'rest_api_init', array( $this, 'wc_zelle_update_order_route' ) );
   }
 
-  // Create REST API route
   function wc_zelle_update_order_route() {
     register_rest_route( "wc-{$this->id}/v1", "/update-{$this->id}-order", array(
       'methods' => 'POST',
@@ -49,23 +46,27 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
   // Update order
   function wc_zelle_emrcpts_order_update( $data ) {
     header("Content-type: application/json");
-    // header("Content-type: text/plain");
 
     $message_array = array();
 
-    $body = $data->get_body_params();
-    $signature = is_array($data->get_headers()) && !empty($data->get_headers()['x_api_key']) ? wp_kses_post($data->get_headers()['x_api_key'][0]) : null;
+    // Form encoded today, JSON accepted too like the sync accounts endpoint
+    $body = $data->get_json_params();
+    if ( empty($body) || ! is_array($body) ) $body = $data->get_body_params();
+    $signature = is_array($data->get_headers()) && !empty($data->get_headers()['x_api_key']) ? trim( (string) $data->get_headers()['x_api_key'][0] ) : null;
     // print_r($data->get_headers());
     // print_r($body);
 
-    $accountid = wp_kses_post($body['transactionaccountid'] ?? '');
-    $money = wp_kses_post($body['transactionamount'] ?? '');
-    $currency = wp_kses_post($body['transactioncurrency'] ?? '');
-    $amount = wp_kses_post($body['transactionamount'] ?? '');
-    $order_id = wp_kses_post($body['transactionorderid'] ?? '');
-    $note = wp_kses_post($body['transactionnote'] ?? '');
+    $field = function ( $key ) use ( $body ) {
+      return isset( $body[ $key ] ) && is_scalar( $body[ $key ] ) ? sanitize_text_field( (string) $body[ $key ] ) : '';
+    };
+    $accountid = $field('transactionaccountid');
+    $money = $field('transactionamount');
+    $currency = $field('transactioncurrency');
+    $amount = $field('transactionamount');
+    $order_id = $field('transactionorderid');
+    $note = $field('transactionnote');
     $receipt_post_id = null;
-    $email_subject = !empty($body['emailsubject']) ? wp_kses_post($body['emailsubject']) : null;
+    $email_subject = '' !== $field('emailsubject') ? $field('emailsubject') : null;
 
     $origin = get_bloginfo('url');
     $message = "Response by: $origin\n";
@@ -81,7 +82,7 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
 
     $verify = $this->wc_zelle_emrcpts_verify_signature($signature, true);
     if ( is_array($verify) && $verify['status'] === true ) {
-      $amount = wp_kses_post(floatval($amount)); // $amount == $orderamount
+      $amount = (float) $amount; // $amount == $orderamount
       $find_order = $this->wc_zelle_find_zelle_order($money, $amount, $order_id, $accountid, $email_subject, $receipt_post_id);
       $receipt_post_id = $find_order['receipt_post_id'];
       $order = $find_order['order'];
@@ -117,7 +118,6 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     return $response;
   }
 
-  // Verify signature hash
   function wc_zelle_emrcpts_verify_signature( $key, $isJSON = false ) {
     $verified = false;
 
@@ -178,12 +178,7 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     return $wp_query_args;
   }
 
-  /**
-   * The order from the order number is not the ID under sequential order number plugins
-   * @param string|int $number Order number from the payment memo.
-   * @param float|null $amount Amount paid, to pick between orders sharing the number.
-   * @return WC_Order|null Null when no Zelle order, or more than one, fits
-   */
+  // The order from the order number is not the ID under sequential order number plugins @return WC_Order|null
   function wc_zelle_order_from_number( $number, $amount = null ) {
     $number = ltrim( trim( (string) $number ), '#' );
     if ( '' === $number ) { return null; }
@@ -240,7 +235,7 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
     if ( empty($order) && 'order_number' === $matching ) {
       $post_title = "Receipt: $money from $accountid, no order matched the order number";
       $post_content .= "No order matched the order number in the payment memo. Order matching is set to order number only, so no order was looked up by amount.\n";
-    } elseif (empty($order)) {
+    } else if (empty($order)) {
       // 'orderby' => '<' . ( time() - 3600 ), 'fields' => 'ids' // ordered before the last hour
       // $orders = wc_get_orders( ['limit' => 5, 'payment_method' => $this->id, 'orderby' => time() - 3600, 'status' => array('wc-on-hold')] );
       // $orders = wc_get_orders( ['limit' => 5, 'payment_method' => $this->id, 'orderby' => 'date', 'order' => 'DESC', 'date_created' => '>' . ( time() - 3600 ), 'status' => array('wc-on-hold')] );
@@ -256,7 +251,7 @@ class WC_Zelle_Update_Order extends WC_Zelle_Gateway {
         $matches = array( 'on-hold' => array(), 'pending' => array() );
         foreach ( $orders as $status => $recent_orders ) {
           foreach ( $recent_orders as $recent ) {
-            $orderamount = wp_kses_post(floatval($recent->get_total()));
+            $orderamount = (float) $recent->get_total();
             $post_content .= "Recent order " . $recent->get_id() . " (" . $recent->get_status() . "): $orderamount vs provided: $amount.\n";
             // Pending: checkout orders only (popup still open), never admin, API or renewal orders
             if ( $amount == $orderamount && ( 'on-hold' === $status || in_array( $recent->get_created_via(), array( 'checkout', 'store-api' ), true ) ) ) {

@@ -6,13 +6,13 @@ Plugin URI: https://theafricanboss.com/zelle
 Description: The top bank to bank payment method now on WordPress. Receive Zelle payments on your website with WooCommerce + Zelle
 Author: The African Boss
 Author URI: https://theafricanboss.com
-Version: 5.1
+Version: 5.1.1
 Requires PHP: 7.0
 Requires at least: 6.0
 Tested up to: 7.1.4
 Requires Plugins: woocommerce
 WC requires at least: 6.0.0
-WC tested up to: 11.2.1
+WC tested up to: 11.3.0
 Text Domain: wc-zelle
 Domain Path: /languages
 Created: 2021
@@ -25,12 +25,14 @@ Copyright 2026 theafricanboss.com All rights reserved
 if ( !defined( 'ABSPATH' ) ) {
     exit;
 }
-// include_once ABSPATH . 'wp-admin/includes/plugin.php';
-// $plugin_data = get_plugin_data( __FILE__, false, /* $translate */ false );
-$plugin_data = get_file_data( __FILE__, array(
+// // run the command yourself from the plugin folder:
+// wp i18n make-pot . languages/wc-zelle.pot --ignore-domain --exclude="languages/,svn-local/,* copy.php,* OR.php,* test.php,* copy,* OR,* test"
+require_once ABSPATH . 'wp-admin/includes/plugin.php';
+// $wczelle_plugin_data = get_plugin_data( __FILE__, false, /* $translate */ false );
+$wczelle_plugin_data = get_file_data( __FILE__, array(
     'Version' => 'Version',
 ), 'plugin' );
-define( 'WCZELLE_VERSION', $plugin_data['Version'] );
+define( 'WCZELLE_VERSION', $wczelle_plugin_data['Version'] );
 define( 'WCZELLE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WCZELLE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'WCZELLE_PLUGIN_DIR_URL', plugins_url( '/', __FILE__ ) );
@@ -38,6 +40,7 @@ define( 'WCZELLE_PLUGIN_SLUG', explode( "/", WCZELLE_PLUGIN_BASENAME )[0] );
 define( 'WCZELLE_PLUGIN_VERSION', WCZELLE_PLUGIN_SLUG . '-' . WCZELLE_VERSION );
 define( 'WCZELLE_PLUGIN_TEXT_DOMAIN', 'wc-zelle' );
 define( 'WCZELLE_UPGRADE_URL', 'https://theafricanboss.com/freemius/wc-zelle' );
+unset($wczelle_plugin_data);
 if ( function_exists( 'zelle_fs' ) ) {
     zelle_fs()->set_basename( false, __FILE__ );
 } else {
@@ -95,10 +98,6 @@ if ( function_exists( 'zelle_fs' ) ) {
         zelle_fs()->add_filter( 'after_skip_url', 'zelle_fs_settings_url' );
         zelle_fs()->add_filter( 'after_connect_url', 'zelle_fs_settings_url' );
         zelle_fs()->add_filter( 'after_pending_connect_url', 'zelle_fs_settings_url' );
-    }
-    if ( !is_plugin_active( 'woocommerce/woocommerce.php' ) ) {
-        // deactivate_plugins( WCZELLE_PLUGIN_BASENAME );
-        require_once WCZELLE_PLUGIN_DIR . 'includes/notifications/woocommerce.php';
     }
     // translations
     add_action( 'init', function () {

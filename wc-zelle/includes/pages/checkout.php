@@ -83,7 +83,7 @@ $popup_html .= '<p>' . esc_html__( 'Place order to get payment details and instr
 // Without JavaScript there is no popup, so the notice stays on the page in a <noscript> (no flash)
 $popup_html .= '<noscript>';
 if ( !empty( $this->checkout_description ) ) {
-    $popup_html .= '<p>' . wp_kses_post( wpautop( wptexturize( $this->checkout_description ) ) ) . '</p>';
+    $popup_html .= wp_kses_post( wpautop( wptexturize( $this->checkout_description ) ) );
 }
 $popup_html .= '<p>' . esc_html__( 'Your order will not be processed until funds have cleared in our Zelle/Bank account', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '.</p>';
 $popup_html .= '</noscript>';
@@ -91,6 +91,12 @@ $popup_html .= '</noscript>';
 // // JavaScript there is no window to confirm in, and the order is placed on the spot
 // $popup_html .= '<p class="wcz-popup-note" hidden>' . esc_html__( 'Your order is only confirmed once you confirm it in that window', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '.</p>';
 $popup_html .= '</div>';
+// Without the dialog, checkout-popup.js leaves Place order to WooCommerce
+if ( isset( $GLOBALS['WC_Zelle_Popup_Order'] ) && $GLOBALS['WC_Zelle_Popup_Order'] instanceof WC_Zelle_Popup_Order && $GLOBALS['WC_Zelle_Popup_Order']->wc_zelle_skip_popup() ) {
+    echo $popup_html;
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built
+    return;
+}
 $popup_html .= '<div id="wc-' . esc_attr( $this->id ) . '-popup" class="wcz-popup" role="dialog" aria-modal="true" aria-labelledby="wc-' . esc_attr( $this->id ) . '-popup-title" aria-hidden="true" hidden>';
 $popup_html .= '<div class="wcz-popup-overlay" data-wcz-close="1"></div>';
 $popup_html .= '<div class="wcz-popup-dialog">';
@@ -107,8 +113,7 @@ $popup_html .= '<p class="form-row validate-required wcz-popup-confirmed">
 		<span>' . esc_html__( 'I confirm that I have sent the payment', WCZELLE_PLUGIN_TEXT_DOMAIN ) . '</span>
 	</label>
 </p>';
-// Deliberately not .woocommerce-error: checkout.js removes every node carrying that
-// class whenever it renders a checkout error, and this one has to outlive that
+// Deliberately not .woocommerce-error: checkout.js removes every node carrying that class whenever it renders a checkout error, and this one has to outlive that
 $popup_html .= '<p class="wcz-popup-error" role="alert" hidden></p>';
 /* translators: %s: order total */
 $popup_html .= '<button type="button" class="' . esc_attr( wc_zelle_button_class( true, 'wcz-popup-confirm' ) ) . '">' . sprintf( esc_html__( 'I have sent %s, confirm my order', WCZELLE_PLUGIN_TEXT_DOMAIN ), '<span data-wcz-order-total="1">' . wp_kses_post( $total ) . '</span>' ) . '</button>';

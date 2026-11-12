@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the Checkout with Zelle on Woocommerce plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: Checkout with Zelle on Woocommerce 5.1\n"
+"Project-Id-Version: Checkout with Zelle on Woocommerce 5.1.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wc-zelle\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-29T19:13:07+01:00\n"
+"POT-Creation-Date: 2026-11-11T23:06:26+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 
@@ -42,162 +42,156 @@ msgstr ""
 msgid "checkout-draft > pending > on-hold: while the customer is still in the checkout popup"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:151
+#: includes/class-wc_zelle_gateway.php:157
 msgid "EDIT WITH"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:165
+#: includes/class-wc_zelle_gateway.php:171
 #: includes/notifications/note.php:16
 msgid "Your order was received!"
 msgstr ""
 
 #. translators: %s: order total
-#: includes/class-wc_zelle_gateway.php:167
+#: includes/class-wc_zelle_gateway.php:173
 #, php-format
 msgid "We are checking Zelle to confirm that we received the %s you sent so we can start processing your order."
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:168
+#: includes/class-wc_zelle_gateway.php:174
 #: includes/notifications/note.php:19
 msgid "Thank you for doing business with us"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:168
+#: includes/class-wc_zelle_gateway.php:174
 #: includes/notifications/note.php:19
 msgid "You will be updated regarding your order details soon"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:169
+#: includes/class-wc_zelle_gateway.php:175
 #: includes/notifications/note.php:20
 msgid "Kindest Regards"
 msgstr ""
 
 #. translators: %s: payment method title
-#: includes/class-wc_zelle_gateway.php:449
+#: includes/class-wc_zelle_gateway.php:455
 #, php-format
 msgid "%s link"
 msgstr ""
 
 #. translators: %s: payment method title
-#: includes/class-wc_zelle_gateway.php:456
+#: includes/class-wc_zelle_gateway.php:462
 #, php-format
 msgid "%s QR code"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:458
+#: includes/class-wc_zelle_gateway.php:464
 msgid "Scan with your Zelle/Bank app"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:458
+#: includes/class-wc_zelle_gateway.php:464
 msgid "or click the button below"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:462
+#: includes/class-wc_zelle_gateway.php:468
 msgid "Pay with Zelle"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:742
+#: includes/class-wc_zelle_gateway.php:772
 msgid "Please try another payment method"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:743
+#: includes/class-wc_zelle_gateway.php:773
 msgid "Checkout: Please try another payment method"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:751
-#: includes/class-wc_zelle_gateway.php:757
+#: includes/class-wc_zelle_gateway.php:781
+#: includes/class-wc_zelle_gateway.php:787
 msgid "Something went terribly wrong."
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:751
-#: includes/class-wc_zelle_gateway.php:757
+#: includes/class-wc_zelle_gateway.php:781
+#: includes/class-wc_zelle_gateway.php:787
 msgid "Order information is missing"
 msgstr ""
 
 #. translators: %s: payment method title
-#: includes/class-wc_zelle_gateway.php:777
+#: includes/class-wc_zelle_gateway.php:807
 #, php-format
 msgid "Waiting for the %s payment"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:791
+#: includes/class-wc_zelle_gateway.php:821
 msgid "Connection error."
 msgstr ""
 
-#: includes/class-wc_zelle_gateway.php:797
+#: includes/class-wc_zelle_gateway.php:827
 msgid "Something went wrong. Please try again or choose another payment method."
 msgstr ""
 
 #. translators: %s: payment method ID
-#: includes/class-wc_zelle_gateway.php:854
+#: includes/class-wc_zelle_gateway.php:884
 #, php-format
 msgid "%s on-hold order cancelled: woocommerce hold time limit reached"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway_blocks.php:95
-#: includes/pages/checkout.php:171
+#: includes/class-wc_zelle_gateway_blocks.php:69
+#: includes/pages/checkout.php:176
 msgid "Place order to get payment details and instructions to proceed"
 msgstr ""
 
 #. translators: %s: payment method title
-#: includes/class-wc_zelle_gateway_blocks.php:100
+#: includes/class-wc_zelle_gateway_blocks.php:74
 #, php-format
 msgid "Place your order first then follow instructions on the order confirmation page to pay with %s. Your order will not be processed until we have received the funds."
 msgstr ""
 
-#: includes/class-wc_zelle_gateway_blocks.php:102
+#: includes/class-wc_zelle_gateway_blocks.php:76
 msgid "Place your order then follow instructions on the order confirmation page to pay"
 msgstr ""
 
-#: includes/class-wc_zelle_gateway_blocks.php:119
-#: includes/functions/payment_scripts.php:78
+#: includes/class-wc_zelle_gateway_blocks.php:91
+#: includes/functions/payment_scripts.php:68
 msgid "Please confirm that you have sent the payment."
 msgstr ""
 
-#: includes/class-wc_zelle_gateway_blocks.php:120
+#: includes/class-wc_zelle_gateway_blocks.php:92
 msgid "Confirm the payment in the window to place your order."
 msgstr ""
 
-#: includes/class-wc_zelle_popup_order.php:89
-#: includes/class-wc_zelle_popup_order.php:155
+#: includes/class-wc_zelle_popup_order.php:95
+#: includes/class-wc_zelle_popup_order.php:166
 msgid "Order number previously shown to the customer in the Zelle checkout popup, awaiting their confirmation."
 msgstr ""
 
-#: includes/class-wc_zelle_popup_order.php:96
-#: includes/class-wc_zelle_popup_order.php:538
-#: includes/class-wc_zelle_popup_order.php:598
+#: includes/class-wc_zelle_popup_order.php:102
+#: includes/class-wc_zelle_popup_order.php:560
+#: includes/class-wc_zelle_popup_order.php:689
 msgid "Order number shown to the customer in the Zelle checkout popup, awaiting their confirmation."
 msgstr ""
 
-#: includes/class-wc_zelle_popup_order.php:255
+#: includes/class-wc_zelle_popup_order.php:266
 msgid "Reopened: the customer confirmed this order in the Zelle checkout popup after it had been cancelled."
 msgstr ""
 
-#. translators: %s: order number
-#: includes/class-wc_zelle_popup_order.php:373
-#, php-format
-msgid "Your order #%s is waiting for your Zelle payment. Place order again to see its payment details, and confirm it once you have sent the payment."
-msgstr ""
-
-#: includes/class-wc_zelle_popup_order.php:455
-#: includes/class-wc_zelle_popup_order.php:532
+#: includes/class-wc_zelle_popup_order.php:474
+#: includes/class-wc_zelle_popup_order.php:554
 msgid "Reopened: the customer opened the Zelle checkout popup again after this order had been cancelled."
 msgstr ""
 
 #. translators: %s: reason the order was released
-#: includes/class-wc_zelle_popup_order.php:642
+#: includes/class-wc_zelle_popup_order.php:732
 #, php-format
 msgid "No longer held for the Zelle checkout popup (%s). Kept in case the customer already paid with this order number."
 msgstr ""
 
 #. translators: %s: payment method title
-#: includes/class-wc_zelle_update_order.php:18
+#: includes/class-wc_zelle_update_order.php:17
 #, php-format
 msgid "%s Receipts"
 msgstr ""
 
 #. translators: %s: payment method title
-#: includes/class-wc_zelle_update_order.php:20
+#: includes/class-wc_zelle_update_order.php:19
 #, php-format
 msgid "%s Receipt"
 msgstr ""
@@ -221,44 +215,48 @@ msgstr ""
 msgid "Select it"
 msgstr ""
 
+#: includes/functions/payment_scripts.php:69
+msgid "Your order could not be confirmed. Please try again, or close this window and place your order again."
+msgstr ""
+
 #. translators: %s: order total
-#: includes/notifications/email.php:25
-#: includes/pages/checkout.php:56
-#: includes/pages/checkout.php:121
-#: includes/pages/thankyou.php:86
+#: includes/notifications/email.php:24
+#: includes/pages/checkout.php:57
+#: includes/pages/checkout.php:122
+#: includes/pages/thankyou.php:83
 #, php-format
 msgid "Send %s from your bank via Zelle"
 msgstr ""
 
-#: includes/notifications/email.php:26
-#: includes/notifications/email.php:53
-#: includes/pages/checkout.php:122
-#: includes/pages/thankyou.php:87
+#: includes/notifications/email.php:25
+#: includes/notifications/email.php:54
+#: includes/pages/checkout.php:123
+#: includes/pages/thankyou.php:84
 msgid "Here are the Zelle details you should know for the transfer"
 msgstr ""
 
 #. translators: %s: payment method name, Zelle
 #: includes/notifications/email.php:30
-#: includes/notifications/email.php:55
-#: includes/pages/checkout.php:123
-#: includes/pages/thankyou.php:88
+#: includes/notifications/email.php:57
+#: includes/pages/checkout.php:125
+#: includes/pages/thankyou.php:86
 #, php-format
 msgid "%s Name"
 msgstr ""
 
 #. translators: %s: payment method name, Zelle
 #: includes/notifications/email.php:34
-#: includes/notifications/email.php:56
-#: includes/pages/checkout.php:124
-#: includes/pages/thankyou.php:89
+#: includes/notifications/email.php:59
+#: includes/pages/checkout.php:127
+#: includes/pages/thankyou.php:88
 #, php-format
 msgid "%s Tag"
 msgstr ""
 
 #. translators: %s: payment method name, Zelle
 #: includes/notifications/email.php:38
-#: includes/notifications/email.php:57
-#: includes/pages/checkout.php:125
+#: includes/notifications/email.php:61
+#: includes/pages/checkout.php:129
 #: includes/pages/thankyou.php:90
 #, php-format
 msgid "%s Email"
@@ -266,18 +264,18 @@ msgstr ""
 
 #. translators: %s: payment method name, Zelle
 #: includes/notifications/email.php:42
-#: includes/notifications/email.php:58
-#: includes/pages/checkout.php:126
-#: includes/pages/thankyou.php:91
+#: includes/notifications/email.php:63
+#: includes/pages/checkout.php:131
+#: includes/pages/thankyou.php:92
 #, php-format
 msgid "%s Phone"
 msgstr ""
 
-#: includes/notifications/email.php:44
+#: includes/notifications/email.php:45
 msgid "Payment Reference / Order Number"
 msgstr ""
 
-#: includes/notifications/email.php:52
+#: includes/notifications/email.php:53
 msgid "Send the requested total from your bank via Zelle"
 msgstr ""
 
@@ -291,42 +289,42 @@ msgstr ""
 msgid "Please finish setting up this payment method or contact the admin to do so."
 msgstr ""
 
-#: includes/pages/checkout.php:57
+#: includes/pages/checkout.php:58
 #: includes/pages/thankyou.php:31
 msgid "Please use the Zelle information, QR code or payment button below, along with the order number as the memo"
 msgstr ""
 
 #. translators: %s: order total
-#: includes/pages/checkout.php:71
-#: includes/pages/thankyou.php:46
+#: includes/pages/checkout.php:72
+#: includes/pages/thankyou.php:42
 #, php-format
 msgid "Send %s from your bank via Zelle using the information below"
 msgstr ""
 
-#: includes/pages/checkout.php:76
-#: includes/pages/thankyou.php:51
+#: includes/pages/checkout.php:77
+#: includes/pages/thankyou.php:47
 msgid "Name"
 msgstr ""
 
-#: includes/pages/checkout.php:79
-#: includes/pages/thankyou.php:54
+#: includes/pages/checkout.php:80
+#: includes/pages/thankyou.php:50
 msgid "Tag"
 msgstr ""
 
-#: includes/pages/checkout.php:82
-#: includes/pages/thankyou.php:57
+#: includes/pages/checkout.php:83
+#: includes/pages/thankyou.php:53
 msgid "Email"
 msgstr ""
 
-#: includes/pages/checkout.php:85
-#: includes/pages/thankyou.php:60
+#: includes/pages/checkout.php:86
+#: includes/pages/thankyou.php:56
 msgid "Phone"
 msgstr ""
 
 #: includes/pages/checkout.php:91
 #: includes/pages/checkout.php:94
 #: includes/pages/checkout.php:96
-#: includes/pages/thankyou.php:63
+#: includes/pages/thankyou.php:59
 msgid "Memo"
 msgstr ""
 
@@ -340,49 +338,49 @@ msgstr ""
 
 #: includes/pages/checkout.php:113
 #: includes/pages/checkout.php:115
-#: includes/pages/checkout.php:128
+#: includes/pages/checkout.php:133
 msgid "so we can start processing your order"
 msgstr ""
 
 #: includes/pages/checkout.php:115
-#: includes/pages/checkout.php:128
+#: includes/pages/checkout.php:133
 msgid "After paying, please come back here and place the order below"
 msgstr ""
 
-#: includes/pages/checkout.php:127
+#: includes/pages/checkout.php:132
 msgid "Please <strong>use your Order Number (available once you place order)</strong> as the payment reference"
 msgstr ""
 
-#: includes/pages/checkout.php:136
+#: includes/pages/checkout.php:141
 msgid "please call"
 msgstr ""
 
-#: includes/pages/checkout.php:140
+#: includes/pages/checkout.php:145
 msgid "You can also email"
 msgstr ""
 
-#: includes/pages/checkout.php:145
+#: includes/pages/checkout.php:150
 msgid "If you are having an issue"
 msgstr ""
 
-#: includes/pages/checkout.php:150
+#: includes/pages/checkout.php:155
 msgid "See this 1min video demo explaining how this works"
 msgstr ""
 
-#: includes/pages/checkout.php:178
+#: includes/pages/checkout.php:183
 msgid "Your order will not be processed until funds have cleared in our Zelle/Bank account"
 msgstr ""
 
-#: includes/pages/checkout.php:190
+#: includes/pages/checkout.php:201
 msgid "Close"
 msgstr ""
 
-#: includes/pages/checkout.php:199
+#: includes/pages/checkout.php:210
 msgid "I confirm that I have sent the payment"
 msgstr ""
 
 #. translators: %s: order total
-#: includes/pages/checkout.php:207
+#: includes/pages/checkout.php:217
 #, php-format
 msgid "I have sent %s, confirm my order"
 msgstr ""
@@ -399,27 +397,27 @@ msgstr ""
 msgid "Refresh after 30 secs of payment submission"
 msgstr ""
 
-#: includes/pages/thankyou.php:78
+#: includes/pages/thankyou.php:74
 msgid "Store Instructions"
 msgstr ""
 
-#: includes/pages/thankyou.php:79
+#: includes/pages/thankyou.php:75
 msgid "Here are some additional store instructions"
 msgstr ""
 
-#: includes/pages/thankyou.php:83
+#: includes/pages/thankyou.php:79
 msgid "Please send the total amount requested to our store if you haven't yet."
 msgstr ""
 
-#: includes/pages/thankyou.php:93
+#: includes/pages/thankyou.php:94
 msgid "We are checking our systems to confirm that we received your payment. If you haven't sent the money already, please make sure to do so now"
 msgstr ""
 
-#: includes/pages/thankyou.php:94
+#: includes/pages/thankyou.php:95
 msgid "Once confirmed, we will proceed with the shipping and delivery options you chose"
 msgstr ""
 
-#: includes/pages/thankyou.php:95
+#: includes/pages/thankyou.php:96
 msgid "Thank you for doing business with us! You will be updated regarding your order details soon"
 msgstr ""
 

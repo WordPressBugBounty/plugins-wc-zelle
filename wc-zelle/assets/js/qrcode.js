@@ -16,8 +16,6 @@
 // rather than just skipping that one QR code.
 
 jQuery(function ($) {
-	"use strict";
-
 	function render() {
 		if (typeof TABQRCodeGenerator !== "function") {
 			return;

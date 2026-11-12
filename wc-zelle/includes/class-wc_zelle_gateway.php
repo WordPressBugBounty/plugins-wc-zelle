@@ -56,6 +56,9 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
         // Whether the gateway's hooks have been added yet. @see __construct()
         private static $hooks_registered = false;
 
+        // A Zelle order WooCommerce is placing again in this request, already pinged on its first pass
+        protected $wc_zelle_resumed_order = 0;
+
         // public $form_fields;
         public function __construct() {
             $this->id = 'zelle';
@@ -121,6 +124,9 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
                 10,
                 3
             );
+            // The block checkout's equivalent of the hook above
+            add_action( 'woocommerce_store_api_checkout_order_processed', array($this, 'wc_zelle_store_api_processed') );
+            add_action( 'woocommerce_resume_order', array($this, 'wc_zelle_resume_order') );
             // Customer Emails
             add_action(
                 'woocommerce_email_order_details',
@@ -652,11 +658,30 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
             }
         }
 
+        /**
+         * WooCommerce resumes the pending order (popup reopened, checkout retried). Read before the checkout sets its new payment method
+         * @param int $order_id Order being resumed.
+         */
+        public function wc_zelle_resume_order( $order_id ) {
+            $order = wc_get_order( $order_id );
+            $this->wc_zelle_resumed_order = ( $order && $this->id === $order->get_payment_method() ? absint( $order_id ) : 0 );
+        }
+
         public function wc_zelle_processed( $order_id, $posted_data, $order ) {
             if ( !$order_id || !$order ) {
                 return;
             }
+            // One ping per order: a resumed Zelle order was pinged when it was created
+            if ( absint( $order_id ) === $this->wc_zelle_resumed_order ) {
+                return;
+            }
             if ( $this->id === $order->get_payment_method() && function_exists( 'wc_zelle_order_processed' ) ) {
+                wc_zelle_order_processed( $order );
+            }
+        }
+
+        public function wc_zelle_store_api_processed( $order ) {
+            if ( $order instanceof WC_Order && $this->id === $order->get_payment_method() && function_exists( 'wc_zelle_order_processed' ) ) {
                 wc_zelle_order_processed( $order );
             }
         }
@@ -685,6 +710,7 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
             }
             // Exit
             require_once WCZELLE_PLUGIN_DIR . 'includes/functions/zoho.php';
+            wc_zelle_zoho_order_emails( $order, $this );
         }
 
         /**
@@ -694,7 +720,15 @@ if ( class_exists( 'WC_Payment_Gateway' ) ) {
          * @return string '1', '2' or '3'
          */
         public function wc_zelle_display() {
-            $design = (string) $this->display_zelle;
+            return self::wc_zelle_design( $this->display_zelle );
+        }
+
+        /**
+         * The checkout design for a stored display_zelle value. Shared with WC_Zelle_Popup_Order
+         * @return string '1', '2' or '3'
+         */
+        public static function wc_zelle_design( $stored ) {
+            $design = (string) $stored;
             if ( 'no' === $design ) {
                 $design = '1';
             } else {

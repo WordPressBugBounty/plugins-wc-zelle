@@ -2,15 +2,14 @@
 // The popup lives on document.body, outside React, so re-renders cannot wipe it.
 
 (() => {
-	"use strict";
-
 	const el = window.React,
 		wpI18n = window.wp.i18n,
 		blocksRegistry = window.wc.wcBlocksRegistry,
 		htmlEntities = window.wp.htmlEntities,
 		settings = (0, window.wc.wcSettings.getSetting)("zelle_data", {}),
 		defaultLabel = (0, wpI18n.__)("Zelle", "wc-zelle"),
-		label = (0, htmlEntities.decodeEntities)(settings.title) || defaultLabel;
+		label =
+			(0, htmlEntities.decodeEntities)(settings.title) || defaultLabel;
 
 	const i18n = settings.popup_i18n || {};
 	const usePopup = !!settings.popup && !!settings.popup_endpoint;
@@ -146,9 +145,11 @@
 					number.textContent = data.number || "";
 				}
 				if (data.total) {
-					popup.querySelectorAll("[data-wcz-order-total]").forEach((node) => {
-						node.innerHTML = data.total;
-					});
+					popup
+						.querySelectorAll("[data-wcz-order-total]")
+						.forEach((node) => {
+							node.innerHTML = data.total;
+						});
 				}
 
 				popup.hidden = false;
@@ -167,7 +168,8 @@
 					const confirmed = popup.querySelector(
 						".wcz-popup-confirmed input[type='checkbox']",
 					);
-					const confirmButton = popup.querySelector(".wcz-popup-confirm");
+					const confirmButton =
+						popup.querySelector(".wcz-popup-confirm");
 
 					// Always a deliberate act, never left ticked from a previous open
 					if (confirmed) {
@@ -184,12 +186,14 @@
 						resolve(false);
 					}
 
-					popup.querySelectorAll("[data-wcz-close]").forEach((node) => {
-						node.addEventListener("click", (event) => {
-							event.preventDefault();
-							dismiss();
+					popup
+						.querySelectorAll("[data-wcz-close]")
+						.forEach((node) => {
+							node.addEventListener("click", (event) => {
+								event.preventDefault();
+								dismiss();
+							});
 						});
-					});
 
 					document.addEventListener("keydown", function onKey(event) {
 						if ("Escape" !== event.key && 27 !== event.keyCode) {
@@ -270,24 +274,7 @@
 			);
 		}, [eventRegistration, emitResponse]);
 
-		const description = (0, htmlEntities.decodeEntities)(
-			settings.description || "",
-		);
-		if (!settings.waiting) {
-			return description;
-		}
-
-		// An order from a popup that was closed or lost to a page reload, which Place order shows again
-		return (0, el.createElement)(
-			el.Fragment,
-			null,
-			description,
-			(0, el.createElement)(
-				"p",
-				{ className: "wcz-popup-waiting" },
-				(0, el.createElement)("strong", null, settings.waiting),
-			),
-		);
+		return (0, htmlEntities.decodeEntities)(settings.description || "");
 	};
 
 	const Label = (props) => {
